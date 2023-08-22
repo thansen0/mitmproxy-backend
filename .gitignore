@@ -1,2 +1,5 @@
 data
 __pycache__
+image_*
+json_*
+text_*

@@ -3,7 +3,6 @@ import time
 import numpy as np
 from CustomList import CustomList
 import pdb
-import cv2
 import logging
 
 class ModifyResponse:
@@ -12,8 +11,6 @@ class ModifyResponse:
 
         # Create watch list
         self.watch_list = CustomList("mixed_use.txt")
-
-        # print(self.watch_list)
 
     def response(self, flow: http.HTTPFlow) -> None:
 
@@ -28,10 +25,9 @@ class ModifyResponse:
             # print(f"Saved Image content to {filename}")
 
             fill_image_path = "./fill.jpeg"
-            #img = cv2.imread(fill_image_path)
             with open(fill_image_path, "rb") as file:
                 file_bytes = file.read()
-            flow.response.content = file_bytes # cv2.imencode('jpeg', img)
+            flow.response.content = file_bytes
 
             
 
