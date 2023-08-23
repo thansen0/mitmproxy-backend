@@ -33,3 +33,16 @@ This is a way to ignore hosts through the command line, although I can't find a 
 mitmdump --ignore-hosts reddit.com
 ```
 
+# Machine Learning Models
+
+### nsfw-detector 1.1.1
+
+This one can be imported easily from pip, claims to be easy to use
+
+https://pypi.org/project/nsfw-detector/
+
+### nsfw-image-urls
+
+Collection of urls to images of nsfw images. Could train on these if I want.
+
+https://github.com/d00ML0rDz/nsfw-image-urls

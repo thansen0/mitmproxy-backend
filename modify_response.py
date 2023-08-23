@@ -4,10 +4,14 @@ import numpy as np
 from CustomList import CustomList
 import pdb
 import logging
+from nsfw_detector import predict
 
 class ModifyResponse:
     def __init__(self):
         self.num = 0
+
+        # 
+        nsfw_model = predict.load_model("./nsfw_mobilenet2.224x224.h5")
 
         # Create watch list
         self.watch_list = CustomList("mixed_use.txt")
@@ -22,7 +26,9 @@ class ModifyResponse:
             filename = f"image_original_{cur_time}_{flow.request.host}_path_{flow.request.path.replace('/', '_')}.png"
             with open(filename, "wb") as f:
                 f.write(flow.response.content)
-            # print(f"Saved Image content to {filename}")
+
+                classification = predict.classify(nsfw_model, f)
+                logging.info(classification)
 
             fill_image_path = "./fill.jpeg"
             with open(fill_image_path, "rb") as file:

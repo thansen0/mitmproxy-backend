@@ -11,15 +11,8 @@ def response(flow: http.HTTPFlow) -> None:
     if "text/css" in flow.response.headers.get("content-type", ""):
         logging.info("text/css Response headers, no save: %s" % str(flow.response.headers.get("content-type")))
 
-        # Save the HTML content to a file with a unique name
-#        filename = f"image_{cur_time}_{flow.request.host}_path_{flow.request.path.replace('/', '_')}.png"
-#        with open(filename, "wb") as f:
-#            f.write(flow.response.content)
-#        print(f"Saved Image content to {filename}")
-
-
-    #elif ("image/jpeg" or "image/png") in flow.response.headers.get("content-type", ""):
     elif "image/jpeg" in flow.response.headers.get("content-type", "") or "image/png" in flow.response.headers.get("content-type", ""):
+
         logging.info("image/jpeg Response headers: %s" % str(flow.response.headers.get("content-type", "")))
         # Save the HTML content to a file with a unique name
         filename = f"image_{cur_time}_{flow.request.host}_path_{flow.request.path.replace('/', '_')}.png"
