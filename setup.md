@@ -46,3 +46,18 @@ https://pypi.org/project/nsfw-detector/
 Collection of urls to images of nsfw images. Could train on these if I want.
 
 https://github.com/d00ML0rDz/nsfw-image-urls
+
+## Connecting to remote server
+
+SSH into server, open up ports. Then run mitmdump with the command
+
+```
+mitmdump -s save_html.py --set block_global=false
+```
+
+where block global allows you to listen on public IP addresses (such as any user). Then on my machine I run
+
+```
+chromium --proxy-server="http://66.135.25.224:8080"
+```
+
