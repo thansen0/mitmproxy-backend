@@ -37,9 +37,18 @@ mitmdump --ignore-hosts reddit.com
 
 ### nsfw-detector 1.1.1
 
-This one can be imported easily from pip, claims to be easy to use
+This has to be installed in a specific order or else it will have conflicts.
 
-https://pypi.org/project/nsfw-detector/
+```
+pip install protobuf==3.20.*
+pip install tensorflow==2.12.1
+pip install nsfw-detector
+nsfw-predict --saved_model_path mobilenet_v2_140_224 --image_source fill.jpeg
+```
+
+I also seem to need this here, and the saved\_model.h5 is the model to point to. https://github.com/GantMan/nsfw_model/releases
+
+This is very slow, haven't tested with GPU yet.
 
 ### nsfw-image-urls
 

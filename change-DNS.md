@@ -20,3 +20,7 @@ Which should be replaced with
 nameserver 185.228.168.10
 nameserver 185.228.169.11
 ```
+
+## Yandex DNS
+
+Family browsing https://dns.yandex.com/

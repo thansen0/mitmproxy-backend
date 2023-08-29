@@ -1,5 +1,8 @@
 data
 __pycache__
+venv
 image_*
 json_*
 text_*
+mobilenet_v2_140_224.1.zip
+mobilenet_v2_140_224
