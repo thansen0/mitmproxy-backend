@@ -41,7 +41,7 @@ This has to be installed in a specific order or else it will have conflicts.
 
 ```
 pip install protobuf==3.20.*
-pip install tensorflow==2.12.1
+# pip install tensorflow==2.12.1 # I don't think it's needed
 pip install nsfw-detector
 nsfw-predict --saved_model_path mobilenet_v2_140_224 --image_source fill.jpeg
 ```
