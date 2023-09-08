@@ -8,7 +8,7 @@ ENV APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
 # Update package lists and install necessary dependencies
 RUN apt update -y && apt upgrade -y && \
     apt install -y python3-pip
-RUN apt install -y wget unzip
+RUN apt install -y wget unzip git
 
 # Install TensorFlow using pip
 RUN pip3 install protobuf==3.20.*

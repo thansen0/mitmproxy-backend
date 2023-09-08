@@ -43,12 +43,10 @@ This has to be installed in a specific order or else it will have conflicts.
 pip install protobuf==3.20.*
 # pip install tensorflow==2.12.1 # I don't think it's needed
 pip install nsfw-detector
+
+wget https://github.com/GantMan/nsfw_model/releases/download/1.1.0/nsfw_mobilenet_v2_140_224.zip
 nsfw-predict --saved_model_path mobilenet_v2_140_224 --image_source fill.jpeg
 ```
-
-I also seem to need this here, and the saved\_model.h5 is the model to point to. https://github.com/GantMan/nsfw_model/releases
-
-This is very slow, haven't tested with GPU yet.
 
 ### nsfw-image-urls
 
