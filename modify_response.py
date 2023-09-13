@@ -91,10 +91,12 @@ class ModifyResponse:
             # filename = f"image_original_{cur_time}_{flow.request.host}_path_{flow.request.path.replace('/', '_')}"
             try:
                 filename = f"image_original_{cur_time}_{flow.request.host}_path_{flow.request.path.replace('/', '_')}"
+                filename = os.path.join("tmp-image", filename)
             except:
                 # KeyError(key)
                 logging.info("Couldn't get host from flow.request.host")
                 filename = f"image_original_{cur_time}_path_{flow.request.path.replace('/', '_')}"[:100]
+                filename = os.path.join("tmp-image", filename)
 
             with open(filename, "wb") as f:
                 f.write(flow.response.content)

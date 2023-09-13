@@ -2,6 +2,7 @@ data
 __pycache__
 venv
 image_*
+tmp-image/image_*
 json_*
 text_*
 mobilenet_v2_140_224.1.zip
