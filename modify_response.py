@@ -18,7 +18,6 @@ class ModifyResponse:
         # config file loading
         config = configparser.ConfigParser()
         config.read('redis-config.ini')
-        config['REDIS']
 
         # Create a Redis connection
         #self.redis_host = 'localhost'  # Replace with your Redis server's hostname or IP address
