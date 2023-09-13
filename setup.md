@@ -65,6 +65,6 @@ mitmdump -s save_html.py --set block_global=false
 where block global allows you to listen on public IP addresses (such as any user). Then on my machine I run
 
 ```
-chromium --proxy-server="http://45.32.203.83:8080"
+chromium --proxy-server="http://45.76.232.143:8080"
 ```
 

@@ -1,6 +1,5 @@
 from mitmproxy import ctx, http
 import numpy as np
-from CustomList import CustomList
 from nsfw_detector import predict
 import redis
 import logging
@@ -15,8 +14,6 @@ class ModifyResponse:
     def __init__(self):
         # load model
         self.nsfw_model = predict.load_model("./mobilenet_v2_140_224/saved_model.h5")
-        # Create watch list
-        # self.watch_list = CustomList("mixed_use.txt")
 
         # config file loading
         config = configparser.ConfigParser()
@@ -26,7 +23,7 @@ class ModifyResponse:
         # Create a Redis connection
         #self.redis_host = 'localhost'  # Replace with your Redis server's hostname or IP address
         #self.redis_port = 6379         # Replace with your Redis server's port
-        self.redis_db = 0              # Replace with your desired Redis database number (default is 0)
+        #self.redis_db = 0              # Replace with your desired Redis database number (default is 0)
 
         self.redis_host = config['REDIS']['redis_host']
         self.redis_port = int(config['REDIS']['redis_port'])
@@ -42,14 +39,10 @@ class ModifyResponse:
             exit(1)
 
     def _url_exists(self, url, flow):
-        # perform modifications to url if needed
         # Define a regex pattern to extract the domain and subreddit
-
-
-        print("The URL passed in:"+url)
         if "reddit.com" in url:
-            logging.info("This is a reddit URL")
-            
+            #logging.info("This is a reddit URL")
+
             # pattern = r'https?://(www\.)?reddit\.com/r/([^/]+)/'
             pattern = r'(?:www\.)?reddit\.com:(\d+)/r/(\w+)'
             #breakpoint()
@@ -65,11 +58,10 @@ class ModifyResponse:
 
                 return self.ri.exists(url_key)
 
-            logging.info("Reddit in URL but match failed")
+            #logging.info("Reddit in URL but match failed")
             return False
 
-        logging.info("Reddit is not in URL")
-
+        #logging.info("Reddit is not in URL")
         return False
 
     def request(self, flow: http.HTTPFlow) -> None:
@@ -98,7 +90,7 @@ class ModifyResponse:
             # Save the HTML content to a file with a unique name
             # filename = f"image_original_{cur_time}_{flow.request.host}_path_{flow.request.path.replace('/', '_')}"
             try:
-                filename = f"image_original_{cur_time}_{flow.request.host}_path_{flow.request.path.replace('/', '_')}"[:100]
+                filename = f"image_original_{cur_time}_{flow.request.host}_path_{flow.request.path.replace('/', '_')}"
             except:
                 # KeyError(key)
                 logging.info("Couldn't get host from flow.request.host")
@@ -106,9 +98,7 @@ class ModifyResponse:
 
             with open(filename, "wb") as f:
                 f.write(flow.response.content)
-
                 classification = predict.classify(self.nsfw_model, filename)
-                # logging.info(classification)
 
                 # may not be filename, check log
                 neutral_perc = classification[filename]['neutral'] # not porn if near 1
