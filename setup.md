@@ -68,3 +68,18 @@ where block global allows you to listen on public IP addresses (such as any user
 chromium --proxy-server="http://45.76.232.143:8080"
 ```
 
+## ssh tunneling with password (password optional)
+
+Initiate tunnel using -L command, * means all domains.
+
+```
+ssh -L 8080:*:8080 mitm-nogpu
+...
+mitmdump -s modify_response.py --proxyauth username:password
+```
+
+And then connect with a browser like it was a local server
+
+```
+chromium --proxy-server="http://localhost:8080"
+```

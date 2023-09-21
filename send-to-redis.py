@@ -1,5 +1,5 @@
-from nsfw_detector import predict
 import redis
+import configparser
 
 def store_lines_in_redis(input_file_path, redis_host='localhost', redis_port=6379):
     try:
@@ -31,6 +31,6 @@ if __name__ == "__main__":
     redis_auth = config['REDIS']['redis_auth']
     redis_db = int(config['REDIS']['redis_db'])
 
-    input_file_path = "nsfw-subs.txt"  # Replace with your output file path
+    input_file_path = "nsfw-subs.txt"
     store_lines_in_redis(input_file_path, redis_host, redis_port)
 
