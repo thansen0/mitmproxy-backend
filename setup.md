@@ -83,3 +83,21 @@ And then connect with a browser like it was a local server
 ```
 chromium --proxy-server="http://localhost:8080"
 ```
+
+## Custom ssh tunneling
+
+locally build and run the `ssh_tunnel.c` executable. Run, may need to add password to code before compiling. Run as `g++ socket_tunnel.c -lssh && ./a.out`
+
+Open a broswer using 
+
+```
+chromium --proxy-server="http://localhost:8080"
+```
+
+On the server, run 
+
+```
+mitmdump -s modify_response.py --proxyauth username:password --set block_global=false
+```
+
+But I will not recieve information from the server, I can only send it out. To recieve information I would have to run another instance on the server to send it back.
