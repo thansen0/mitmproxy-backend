@@ -206,7 +206,7 @@ int direct_forwarding(ssh_session session) {
     forwarding_channel = ssh_channel_new(session);
     if (forwarding_channel == NULL) {
         fprintf(stderr, "Error making new channel; %s", ssh_get_error(session));
-        return rc;
+        return 1;
     }
  
 

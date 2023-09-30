@@ -1,6 +1,4 @@
 
-
-
 class MailHelper:
 
     def __init__(self):

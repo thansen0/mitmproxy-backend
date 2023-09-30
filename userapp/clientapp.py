@@ -1,38 +1,57 @@
 import tkinter as tk
 from tkinter import ttk
 from MailHelper import MailHelper
+from LoginHelper import LoginHelper
 
 class LoginPage(tk.Frame):
     def __init__(self, parent, switch_to_info_page):
         super().__init__(parent)
         self.parent = parent
 
+        self.lg = LoginHelper()
+        if self.lg.isLoggedIn():
+            # Go straight to app
+            switch_to_info_page()
+
+        # set font type/weight
+        font_family = "Arimo"
+        font_size = 12
+        font_weight = "bold"
+        default_font = (font_family, font_size, font_weight)
+
+
+        self.pack(pady=20, padx=60)
+
         # Title
-        title_label = ttk.Label(self, text="ParentControls.Win Login")
+        title_label = ttk.Label(self, text="ParentControls.Win Login", font=(font_family, 14, font_weight))
         title_label.pack(pady=20)
 
         # Login form
-        self.username_label = tk.Label(self, text="Username:")
+        self.username_label = tk.Label(self, text="Username:", font=default_font)
         self.username_label.pack()
 
         self.username_entry = tk.Entry(self)
         self.username_entry.pack()
 
-        self.password_label = tk.Label(self, text="Password:")
+        self.password_label = tk.Label(self, text="Password:", font=default_font)
         self.password_label.pack()
 
         self.password_entry = tk.Entry(self, show="*")
         self.password_entry.pack()
 
-        self.login_button = tk.Button(self, text="Login", command=self.try_login)
+        self.login_button = tk.Button(self, text="Login", command=self.try_login, font=default_font)
         self.login_button.pack()
 
     def try_login(self):
         # perform server login, assume success
-        try_login = True
+        try_login = self.lg.login(self.username_entry.get(), self.password_entry.get())
+        # try_login = True
 
         if try_login:
             switch_to_info_page()
+
+    def close(self):
+        self.lg.close()
 
 """
 class InfoPage(tk.Frame):
@@ -99,7 +118,8 @@ def switch_to_info_page():
 
 # Create the main application window
 root = tk.Tk()
-root.title("App")
+root.title("ParentControls.Win")
+# root.geometry("400x300")
 
 # Create instances of the login and information frames
 login_frame = LoginPage(root, switch_to_info_page)
