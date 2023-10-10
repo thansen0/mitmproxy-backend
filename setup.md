@@ -101,3 +101,18 @@ mitmdump -s modify_response.py --proxyauth username:password --set block_global=
 ```
 
 But I will not recieve information from the server, I can only send it out. To recieve information I would have to run another instance on the server to send it back.
+
+
+## Custom certificate
+
+This will produce a custom certificate. Keep in mind that the site mitm.it will always use their cert, not the one given to them. I'm pretty sure I'd have to pass in the public key if need be
+
+```
+openssl genrsa -out cert.key 2048                       (private key)
+openssl req -new -x509 -key cert.key -out cert.crt      (public key)
+cat cert.key cert.crt > cert.pem
+
+mitmdump -s modify_response.py --proxyauth username:password --certs *=cert.pem
+```
+
+
