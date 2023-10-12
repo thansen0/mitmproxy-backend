@@ -1,3 +1,6 @@
 [submodule "mitmproxy"]
 	path = mitmproxy
 	url = git@github.com:mitmproxy/mitmproxy.git
+[submodule "url-list/adult-hosts-list"]
+	path = url-list/adult-hosts-list
+	url = git@github.com:emiliodallatorre/adult-hosts-list.git

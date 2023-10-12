@@ -22,7 +22,7 @@ def store_lines_in_redis(input_file_path, redis_host='localhost', redis_port=637
 
 if __name__ == "__main__":
     config = configparser.ConfigParser()
-    config.read('redis-config.ini')
+    config.read('../redis-config.ini')
 
     #redis_host = 'localhost'  # Replace with your Redis server's host
     #redis_port = 6379  # Replace with your Redis server's port
