@@ -1,6 +1,7 @@
 from mitmproxy import ctx, http
 import numpy as np
 from nsfw_detector import predict
+from urllib.parse import urlparse
 import redis
 import logging
 import configparser
@@ -38,11 +39,21 @@ class ModifyResponse:
             exit(1)
 
     def _url_exists(self, url, flow):
-        # Define a regex pattern to extract the domain and subreddit
-        if "reddit.com" in url:
-            #logging.info("This is a reddit URL")
 
-            # pattern = r'https?://(www\.)?reddit\.com/r/([^/]+)/'
+        pretty_url = flow.request.pretty_url
+        if pretty_url == None:
+            print("Issue with flow request url", flow)
+            return False
+        parsed_url = urlparse(pretty_url)
+        print(parsed_url)
+
+        if self.ri.exists(parsed_url.netloc):
+            # This should kill the connection
+            return True
+
+        # Define a regex pattern to extract the domain and subreddit
+        elif "reddit.com" in url:
+            #logging.info("This is a reddit URL")
             pattern = r'(?:www\.)?reddit\.com:(\d+)/r/(\w+)'
             #breakpoint()
     
