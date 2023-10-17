@@ -116,3 +116,12 @@ mitmdump -s modify_response.py --proxyauth username:password --certs *=cert.pem
 ```
 
 
+## Dockerfile setup
+
+We must build and then start the docker container
+
+```
+docker build -t mitmproxy .
+docker run -it mitmproxy
+```
+
