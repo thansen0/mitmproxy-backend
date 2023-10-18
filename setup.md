@@ -122,6 +122,11 @@ We must build and then start the docker container
 
 ```
 docker build -t mitmproxy .
-docker run -it mitmproxy
+docker run -p 8080:8080 mitmproxy
 ```
 
+I used to do `docker run -it mitmproxy` for interactive tty terminal. We can also pass in certificates using the command
+
+```
+docker run -p 8080:8080 mitmproxy -v /path/to/cert.pem:/cert.pem
+```
