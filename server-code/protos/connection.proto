@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+service CreateConnection {
+    // creates the initial connection
+    rpc StartConnection (ConnectionInit) returns (ConnectionResp) {}
+}
+
+message ConnectionInit {
+    string username = 1;
+    string clientPubKey = 2;
+}
+
+
+message ConnectionResp {
+    string username = 1;
+    string serverPubKey = 2;
+    int32  portNumber = 3;
+    string serverIPAddr = 4;
+}
