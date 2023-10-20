@@ -17,14 +17,14 @@ Note: address range must be unique or we'll get routing issues
 
 ```
 [Interface]
-Address = 10.0.0.1/8
+Address = 10.0.0.1/24
 ListenPort = 51820
 PrivateKey = (server_private_key)
 
 # Add client configurations below
 SaveConfig=true
-PostUp=iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-PostUp=iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
+PostUp=iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o enp1s0 -j MASQUERADE
+PostUp=iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o enp1s0 -j MASQUERADE
 ```
 
 We can start it with systemctl using the commands
@@ -63,7 +63,7 @@ Here's the conf file to add it to
 
 ```
 [Interface]
-Address = 10.0.0.2/8
+Address = 10.0.0.2/24
 ListenPort = 51820
 PrivateKey = (client_private_key)
 
@@ -73,11 +73,12 @@ Endpoint = (server IP addr):51820
 AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 30
 ```
+NOTE: I found I can have DNS issues if I don't allow 8.8.8.8 on the client (or another DNS server).
 
 Then I add the client to the server by running this on the server
 
 ```
-sudo wg set wg0 peer <client public key> allowed-ips 10.0.0.2/32
+sudo wg set wg0 peer <client public key> allowed-ips 10.0.0.2/24
 ```
 
 Where allowed-ips is the mask for the client I think, although I'm not certain it's required.
@@ -101,3 +102,13 @@ If it's not, we can set it to one using the command
 
 sudo sysctl -w net.ipv4.ip_forward=1
 
+
+
+
+# Setup stuff I did 
+
+After having trouble accessing public IP's, I tried a few things.
+
+ - I went in /etc/sysctl.conf and uncommented the net.ipv4.ip_forward=1 line
+   - Apply change by running "sudo sysctl -p"
+ - Good site https://linuxiac.com/how-to-set-up-wireguard-vpn-server-on-ubuntu/hhKbdToNQ7LQbuJ249d/rN9S5rrsB+4cLz223Lxk2G8=

@@ -12,13 +12,6 @@ Everything falls into place and it works. The issue is the browser now prevents 
 
 The .pem file must be added where it says, you can't put it in an extra folder, unfortunately.
 
-### mitmdump
-
-```
-./mitmdump -w writedata.txt
-./mitmdump -s save_html.py
-```
-
 ### TLS passthrough
 
 This will allow all TLS through, while inspecting SSL and http
@@ -114,6 +107,16 @@ cat cert.key cert.crt > cert.pem
 
 mitmdump -s modify_response.py --proxyauth username:password --certs *=cert.pem
 ```
+
+## Using wireguard with mitmproxy
+
+It turns out this is quite easy. From the command line it's just
+
+```
+mitmdump -s modify_response.py --mode wireguard
+```
+
+But it can also be done from a python file, which is how I'll have to do it.
 
 
 ## Dockerfile setup
