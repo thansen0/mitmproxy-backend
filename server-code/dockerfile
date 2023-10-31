@@ -8,6 +8,7 @@ ENV NETWORK_MODE=host
 
 COPY modify_response.py .
 COPY redis-config.ini .
+COPY run_wireguard.py .
 
 # Update package lists and install necessary dependencies
 RUN apt update -y && apt upgrade -y && \
@@ -19,7 +20,9 @@ RUN pip3 install protobuf==3.20.*
 RUN pip3 install tensorflow==2.12.1
 RUN pip3 install nsfw-detector mitmproxy mitmproxy-wireguard redis grpcio
 
-RUN wget https://github.com/GantMan/nsfw_model/releases/download/1.1.0/nsfw_mobilenet_v2_140_224.zip && unzip nsfw_mobilenet_v2_140_224.zip
+#RUN wget https://github.com/GantMan/nsfw_model/releases/download/1.1.0/nsfw_mobilenet_v2_140_224.zip && unzip nsfw_mobilenet_v2_140_224.zip
+COPY nsfw_mobilenet_v2_140_224.zip .
+RUN unzip nsfw_mobilenet_v2_140_224.zip
 
 # Clean up the package cache to reduce the image size
 # RUN apt-get clean && \
@@ -28,3 +31,5 @@ RUN wget https://github.com/GantMan/nsfw_model/releases/download/1.1.0/nsfw_mobi
 # Start a shell when the container runs
 CMD ["/bin/bash"]
 #ENTRYPOINT ["mitmdump", "-s", "modify_response.py", "--proxyauth", "username:password", "--set", "block_global=false"]
+#ENTRYPOINT ["mitmdump", "-s", "modify_response.py", "--mode", "wireguard"]
+#ENTRYPOINT ["python", "run_wireguard.py"]

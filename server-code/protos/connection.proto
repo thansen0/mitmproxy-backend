@@ -8,6 +8,7 @@ service CreateConnection {
 message ConnectionInit {
     string username = 1;
     string clientPubKey = 2;
+    int32 deviceId = 3;
 }
 
 

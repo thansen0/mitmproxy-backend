@@ -2,6 +2,8 @@ import mitmproxy_wireguard
 import asyncio
 import logging
 import time
+import configparser
+#import textwrap3 as textwrap
 
 logging.Formatter.convert = time.gmtime
 logger = logging.getLogger()
@@ -14,37 +16,27 @@ async def main():
         server.send_datagram(data.upper(), dst_addr, src_addr)
         #logger.debug("Echoed datagram.")
 
-    # key generation
-    client_privkey = mitmproxy_wireguard.genkey()
-    client_pubkey  = mitmproxy_wireguard.pubkey(client_privkey)
-    client_keypair = (client_privkey, client_pubkey)
-    print(client_keypair)
-
-    server_privkey = mitmproxy_wireguard.genkey()
-    server_pubkey  = mitmproxy_wireguard.pubkey(server_privkey)
-    server_keypair = (server_privkey, server_pubkey)
-    print(server_keypair)
-    #server_keypair = (
-    #            "EG47ZWjYjr+Y97TQ1A7sVl7Xn3mMWDnvjU/VxU769ls=",
-    #            "mitmV5Wo7pRJrHNAKhZEI0nzqqeO8u4fXG+zUbZEXA0=",
-    #        )
-    #client_keypair = (
-    #            "qG8b7LI/s+ezngWpXqj5A7Nj988hbGL+eQ8ePki0iHk=",
-    #            "Test1sbpTFmJULgSlJ5hJ1RdzsXWrl3Mg7k9UTN//jE=",
-    #        )
-
+    # import configuration files information
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    client_pubkey = config['CLIENT']['pub_key']
+    username = config['CLIENT']['username']
+    server_privkey = config['SERVER']['priv_key']
+    server_pubkey = config['SERVER']['pub_key']
 
     print("starting server")
     wg_server = await mitmproxy_wireguard.start_server(
         "0.0.0.0",
         51820,
-        server_keypair[0],
-        [client_keypair[1]],
+        server_privkey,
+        [client_pubkey],
         handle_connection,
         receive_datagram,
     )
 
 
+#    client_conf = gen_client_conf(client_privkey, server_pubkey)
+#    print(client_conf)
 
     def stop(*_):
         logger.info("STOPPING SERVER!!!! stop(*_) FUNCTION CALLED\n\n\n")
@@ -89,20 +81,20 @@ async def handle_connection(rw: mitmproxy_wireguard.TcpStream):
     logger.debug("closed.")
 
 
-def gen_client_conf(client_priv_key, server_pub_key):
-    client_conf = textwrap.dedent(
-        f"""
-            [Interface]
-            PrivateKey = {client_priv_key}
-            Address = 10.0.0.1/32
+#def gen_client_conf(client_priv_key, server_pub_key):
+#    client_conf = textwrap.dedent(
+#        f"""
+#            [Interface]
+#            PrivateKey = {client_priv_key}
+#            Address = 10.0.0.1/32
+#
+#            [Peer]
+#            PublicKey = {server_pub_key}
+#            AllowedIPs = 10.0.0.0/24
+#            Endpoint = {public_ip_addr}:51820
+#        """)
 
-            [Peer]
-            PublicKey = {server_pub_key}
-            AllowedIPs = 10.0.0.0/24
-            Endpoint = {public_ip_addr}:51820
-        """)
-
-    print(client_conf)
+    return client_conf
 
 if __name__ == "__main__":
     asyncio.run(main())
