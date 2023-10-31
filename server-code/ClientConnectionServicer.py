@@ -86,7 +86,7 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
         # Your server logic here
         response = connection_pb2.ConnectionResp(
             username=username,
-            serverPubKey="server_pubkey",
+            serverPubKey=server_pubkey,
             portNumber=5000,
             serverIPAddr=self.ip_addr
         )
