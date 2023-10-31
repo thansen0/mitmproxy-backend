@@ -2,20 +2,21 @@
 import grpc
 import connection_pb2
 import connection_pb2_grpc
+import mitmproxy_wireguard
 
 import socket
 
 class CreateWGConnection():
 
     def __init__(self, username):
-        print("initialize")
         # self.server_ip_addr = socket.gethostbyname("vpn.parentcontrols.win")
         self.server_ip_addr = "45.76.232.143"
         self.server_port_num = 50051
         self.username = username
+        self.deviceId = 1 # needs to be set later
 
-        self.clientPubKey = "pubkey"
-        self.clientPrivKey = "privkey"
+        self.client_privkey = mitmproxy_wireguard.genkey()
+        self.client_pubkey  = mitmproxy_wireguard.pubkey(self.client_privkey)
 
 
     def attemptConnection(self):
@@ -23,8 +24,8 @@ class CreateWGConnection():
         stub = connection_pb2_grpc.CreateConnectionStub(channel)
 
         request = connection_pb2.ConnectionInit(
-            username="parent",
-            clientPubKey="ClientPublicKey"
+            username=self.username,
+            clientPubKey=self.client_pubkey
         )
         response = stub.StartConnection(request)
     
@@ -34,3 +35,5 @@ class CreateWGConnection():
         print("Server IP Address:", response.serverIPAddr)
 
 
+wg = CreateWGConnection("username")
+wg.attemptConnection()

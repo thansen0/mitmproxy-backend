@@ -5,6 +5,7 @@ class LoginHelper:
 
     def __init__(self):
         self.url = 'http://127.0.0.1:3000/users/sign_in'
+        self.username = None
 
     def isLoggedIn(self):
         return False
@@ -16,6 +17,7 @@ class LoginHelper:
         response = None
         try:
             response = requests.get(self.url, auth=(username, password))
+            self.username = username
         except Exception as e:
             # print(e)
             reponse = None
@@ -35,6 +37,9 @@ class LoginHelper:
 
             #return False
             return True
+
+    def getUsername(self):
+        return self.username
 
     def close(self):
         print("Closing login helper")

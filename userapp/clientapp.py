@@ -2,6 +2,9 @@ import tkinter as tk
 from tkinter import ttk
 from MailHelper import MailHelper
 from LoginHelper import LoginHelper
+import sys
+sys.path.append("./protos")
+from protos.CreateWGConnection import CreateWGConnection
 
 class LoginPage(tk.Frame):
     def __init__(self, parent, switch_to_info_page):
@@ -76,9 +79,10 @@ class InfoPage(tk.Frame):
         forum_label = ttk.Label(self, text="Write a Message:")
         forum_label.pack()
         
-        self.message_entry = ttk.Entry(self)
-        self.message_entry.pack(pady=5)
-        self.message_entry.insert(0, "Add message here")
+        # self.message_entry = ttk.Entry(self)
+        self.message_entry = tk.Text(self, height=10, width=30)
+        self.message_entry.pack(pady=5, padx=20)
+        self.message_entry.insert("1.0", "Add message here")
         self.message_entry.bind("<FocusIn>", self.clear_placeholder)
         self.message_entry.bind("<FocusOut>", self.restore_placeholder)
         
@@ -105,12 +109,12 @@ class InfoPage(tk.Frame):
         support_mailer.close()
 
     def clear_placeholder(self, event):
-        if self.message_entry.get() == "Add message here":
-            self.message_entry.delete(0, tk.END)
+        if self.message_entry.get("1.0", "end-1c") == "Add message here":
+            self.message_entry.delete("1.0", "end-1c") #, tk.END)
     
     def restore_placeholder(self, event):
-        if not self.message_entry.get():
-            self.message_entry.insert(0, "Add message here")
+        if not self.message_entry.get("1.0", "end-1c"):
+            self.message_entry.insert("1.0", "Add message here")
 
 def switch_to_info_page():
     login_frame.pack_forget()
