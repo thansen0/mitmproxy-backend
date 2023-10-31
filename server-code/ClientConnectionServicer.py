@@ -11,12 +11,15 @@ import connection_pb2
 import connection_pb2_grpc
 
 class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
+    ip_addr = "45.76.232.143"
+
     def StartConnection(self, request, context):
         print("request: ", request)
         print("context: ", context)
 
         # get data from client and generate server keys
         username = str(request.username)
+        deviceId = str(request.deviceId) # I only use it as a str right now, no sense converting it
         client_pubkey = request.clientPubKey
 
         server_privkey = mitmproxy_wireguard.genkey()
@@ -27,6 +30,7 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
         docker_config['SERVER'] = {
             'priv_key': str(server_privkey),
             'pub_key': str(server_pubkey),
+            'ip_addr': self.ip_addr
         }
         docker_config['CLIENT'] = {
             'pub_key': str(client_pubkey),
@@ -36,7 +40,7 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
         print("cpk:", client_pubkey)
         #with open(username+"-docker.ini") as configfile:
         # TODO a user email will eventually break this
-        config_path = "./user_configs/"+username+"/config.ini"
+        config_path = "./user_configs/"+username+"/"+str(deviceId)+"config.ini"
         config_path = os.path.join(os.path.abspath(os.getcwd()), config_path)
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         with open(config_path, "w") as configfile:
@@ -54,7 +58,7 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
         }
 
         # Define container settings
-        container_name = username + "_container"
+        container_name = username + "_" + deviceId + "_container"
         container_settings = {
             'image': 'mitmproxy:latest',  # Replace with your desired image name and tag
             'detach': True,  # Run the container in the background
@@ -79,17 +83,12 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
         # Optional: Print container ID
         print(f"Container ID: {container.id}")
 
-        # TODO this is where I would want to add the docker container to a log, as to 
-        # monitor the service and shut it down when a matching device id is used to 
-        # create a new container
-
-
         # Your server logic here
         response = connection_pb2.ConnectionResp(
             username=username,
-            serverPubKey="TODO server_pubkey",
+            serverPubKey="server_pubkey",
             portNumber=5000,
-            serverIPAddr="45.76.232.143"
+            serverIPAddr=self.ip_addr
         )
         print("returning response")
         return response
