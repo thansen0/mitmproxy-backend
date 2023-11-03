@@ -20,11 +20,7 @@ class ModifyResponse:
         config = configparser.ConfigParser()
         config.read('redis-config.ini')
 
-        # Create a Redis connection
-        #self.redis_host = 'localhost'  # Replace with your Redis server's hostname or IP address
-        #self.redis_port = 6379         # Replace with your Redis server's port
-        #self.redis_db = 0              # Replace with your desired Redis database number (default is 0)
-
+        # Get Redis connection information
         self.redis_host = config['REDIS']['redis_host']
         self.redis_port = int(config['REDIS']['redis_port'])
         self.redis_auth = config['REDIS']['redis_auth']
@@ -45,30 +41,41 @@ class ModifyResponse:
             print("Issue with flow request url", flow)
             return False
         parsed_url = urlparse(pretty_url)
-        print(parsed_url)
+        #print("pretty_url: ",pretty_url)
+        #print("parsed_url:", parsed_url)
 
-        if self.ri.exists(parsed_url.netloc):
+        # checks if it's a porn link, always blocked
+        url_key = "nsfw:" + parsed_url.netloc
+        if self.ri.exists(url_key):
             # This should kill the connection
             return True
 
         # Define a regex pattern to extract the domain and subreddit
-        elif "reddit.com" in url:
-            #logging.info("This is a reddit URL")
-            pattern = r'(?:www\.)?reddit\.com:(\d+)/r/(\w+)'
-            #breakpoint()
+        elif "reddit.com/r/" in pretty_url:
+            #pattern = r'(?:www\.)?reddit\.com:(\d+)/r/(\w+)'
+            pattern = r"/r/([^/]+)/"
     
-            match = re.search(pattern, url)            
+            match = re.search(pattern, pretty_url)            
             if match:
                 # Extract the domain and subreddit from the match object
-                domain = match.group(0)  # Full matched URL
-                subreddit = match.group(2)  # Subreddit part
+                # domain = match.group(0)  # /r/subreddit/
+                subreddit = match.group(1)  # just "subreddit" part
 
-                # url_key = f'reddit.com/r/{subreddit}/'.lower()
-                url_key = subreddit.lower()
+                # checks if this is nsfw sub
+                url_key = f'nsfw:subreddit:{subreddit}'.lower()
+                if self.ri.exists(url_key):
+                    return True
 
-                return self.ri.exists(url_key)
+                # checks if this is a pro-trans sub
+                url_key = f'trans:subreddit:{subreddit}'.lower()
+                if self.ri.exists(url_key):
+                    return True
 
-            #logging.info("Reddit in URL but match failed")
+                # checks if this is a pro-trans sub
+                url_key = f'lgbt:subreddit:{subreddit}'.lower()
+                if self.ri.exists(url_key):
+                    return True
+
             return False
 
         #logging.info("Reddit is not in URL")
