@@ -40,7 +40,7 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
         print("cpk:", client_pubkey)
         #with open(username+"-docker.ini") as configfile:
         # TODO a user email will eventually break this
-        config_path = "./user_configs/"+username+"/"+str(deviceId)+"config.ini"
+        config_path = "./user_configs/"+username+"/"+str(deviceId)+"/config.ini"
         config_path = os.path.join(os.path.abspath(os.getcwd()), config_path)
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         with open(config_path, "w") as configfile:
