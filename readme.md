@@ -7,7 +7,7 @@ Generally though the way the app should work is on a remote server, we'll have `
 Inside the container it runs mitmproxy, and a `modify_response.py` script. This holds all of the logic, and communicates with a redis database to see if the url is allowed or not. It also runs a filter on every image, and removes those which are nsfw. You will also have to download `nsfw_mobilenet_v2_140_224.zip` locally for that to work, and I'll send you my redis credentials privately since they contain private keys.
 
 Things to do
- - We will have to whitelist our site by using the flag `mitmproxy -s modify_response.py --mode wireguard --ignore-hosts parentcontrols.win`
+ - We will have to whitelist our site by using the flag `mitmproxy -s modify_response.py --mode wireguard --ignore-hosts parentcontrols.win`, but do so inline with the code in `run_wireguard.py` and not as an argument
  - Finish implementing certificates (I have this working in other tests, just not the final script)
  - Move image processing off to another server, possibly through gRPC again
  - Finally there's a lot to implement in regards to better filtering, adding more sites, and adding the functionality to share topic lists of what to filter between the server and website (I started working on this, call me if you want to ask about it). 

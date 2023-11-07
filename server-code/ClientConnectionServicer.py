@@ -11,7 +11,7 @@ import connection_pb2
 import connection_pb2_grpc
 
 class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
-    ip_addr = "45.76.232.143"
+    ip_addr = "45.76.232.143" # ip addr of server; i.e. computer this is running on
 
     def StartConnection(self, request, context):
         print("request: ", request)
@@ -73,7 +73,7 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
             if existing_container:
                 existing_container.stop()
                 existing_container.remove()
-                print("DELETed existing container ", container_name)
+                print("DELETED existing container ", container_name)
         except:
             print("Container didn't exist")
 

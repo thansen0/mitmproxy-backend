@@ -8,7 +8,7 @@ import configparser
 logging.Formatter.convert = time.gmtime
 logger = logging.getLogger()
 
-public_ip_addr = "45.76.232.143"
+public_ip_addr = "45.76.232.143" # ip you would ping to reach host server
 
 async def main():
     def receive_datagram(data, src_addr, dst_addr):
@@ -34,7 +34,6 @@ async def main():
         receive_datagram,
     )
 
-
 #    client_conf = gen_client_conf(client_privkey, server_pubkey)
 #    print(client_conf)
 
@@ -42,7 +41,6 @@ async def main():
         logger.info("STOPPING SERVER!!!! stop(*_) FUNCTION CALLED\n\n\n")
         print("STOPPING SERVER!!!! stop(*_) FUNCTION CALLED\n\n\n")
         wg_server.close()
-        # TODO ultimately close whole docker container
 
     print("waiting on server to close")
     await wg_server.wait_closed()
