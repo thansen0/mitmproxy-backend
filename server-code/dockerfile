@@ -10,7 +10,7 @@ COPY modify_response.py .
 COPY redis-config.ini .
 COPY run_wireguard.py .
 # add copy for certificate
-COPY cert.key cert.pem
+COPY ./keys/cert.key cert.pem
 
 # Update package lists and install necessary dependencies
 RUN apt update -y && apt upgrade -y && \
@@ -34,4 +34,5 @@ RUN unzip nsfw_mobilenet_v2_140_224.zip
 CMD ["/bin/bash"] # for testing, you have to run wireguard and mitmproxy on your own this way
 #ENTRYPOINT ["mitmdump", "-s", "modify_response.py", "--proxyauth", "username:password", "--set", "block_global=false"]
 #ENTRYPOINT ["mitmdump", "-s", "modify_response.py", "--mode", "wireguard"]
-#ENTRYPOINT ["python", "run_wireguard.py"] # production arguments
+#ENTRYPOINT ["python", "run_wireguard.py"]
+#ENTRYPOINT ["python", "terminal_run_wireguard.py"] # production arguments
