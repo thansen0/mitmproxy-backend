@@ -32,7 +32,7 @@ async def main():
     wg0conf_path = "/wg0.conf"
     client_ip_addr = "71.87.47.163" # maybe 0.0.0.0?
 
-    conf_file_contents = f"
+    conf_file_contents = f"""
 [Interface]
 Address = 10.0.0.1/24
 SaveConfig = true
@@ -45,14 +45,14 @@ PrivateKey = {server_privkey}
 PublicKey = {client_pubkey}
 AllowedIPs = 10.0.0.2/32
 Endpoint = {client_ip_addr}:51820
-    "
+    """
 
     # create wgo.conf file
     with open(wg0conf_path, "w") as conf_file:
         conf_file.write(conf_file_contents)
 
     print("starting server")
-    subprocess.run(["mitmdump", "-s", "modify_response.py", "--mode", "wireguard", "--certs", "cert.pem" ])
+    subprocess.run(["mitmdump", "-s", "modify_response.py", "--mode", "wireguard", "--certs", "/etc/keys/cert.pem"], shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
     ########################
@@ -65,3 +65,6 @@ Endpoint = {client_ip_addr}:51820
 
     print("waiting on server to close")
 
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())

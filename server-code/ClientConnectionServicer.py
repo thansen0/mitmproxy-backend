@@ -64,7 +64,11 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
             'detach': True,  # Run the container in the background
             'name': container_name,  # Assign a name to the container
             'volumes': volume,
-            'remove': True # automatically removes container when it stops
+#            'remove': True, # automatically removes container when it stops
+            'ports': {
+                '51820': 51820,
+                '5000': 5000
+            }
         }
 
         # check if the container already exists, if so remove it

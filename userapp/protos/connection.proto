@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 service CreateConnection {
+    // creates the initial connection
     rpc StartConnection (ConnectionInit) returns (ConnectionResp) {}
 }
 
@@ -16,4 +17,5 @@ message ConnectionResp {
     string serverPubKey = 2;
     int32  portNumber = 3;
     string serverIPAddr = 4;
+    string certificateFileCrt = 5;
 }

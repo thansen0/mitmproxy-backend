@@ -8,9 +8,10 @@ ENV NETWORK_MODE=host
 
 COPY modify_response.py .
 COPY redis-config.ini .
-COPY run_wireguard.py .
-# add copy for certificate
-COPY ./keys/cert.key cert.pem
+COPY terminal_run_wireguard.py .
+COPY ./keys /etc/keys
+COPY RecieveConnections.py .
+COPY protos/ protos/
 
 # Update package lists and install necessary dependencies
 RUN apt update -y && apt upgrade -y && \
@@ -31,8 +32,10 @@ RUN unzip nsfw_mobilenet_v2_140_224.zip
 #     rm -rf /var/lib/apt/lists/*
 
 # Start a shell when the container runs
-CMD ["/bin/bash"] # for testing, you have to run wireguard and mitmproxy on your own this way
+CMD ["/bin/bash"]
 #ENTRYPOINT ["mitmdump", "-s", "modify_response.py", "--proxyauth", "username:password", "--set", "block_global=false"]
 #ENTRYPOINT ["mitmdump", "-s", "modify_response.py", "--mode", "wireguard"]
 #ENTRYPOINT ["python", "run_wireguard.py"]
-#ENTRYPOINT ["python", "terminal_run_wireguard.py"] # production arguments
+
+# production arguments
+#ENTRYPOINT ["python", "terminal_run_wireguard.py"]

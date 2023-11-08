@@ -39,3 +39,9 @@ If I built a container and then stopped it, I can re enter it using exec
 ```
 docker exec -it container_name /bin/bash
 ```
+
+On the server wireguard usually runs on 51280, so you'll want to enable that port as well
+
+```
+docker run -p 51820:51820 -it mitmproxy
+```
