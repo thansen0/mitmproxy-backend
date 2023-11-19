@@ -2,19 +2,20 @@ import requests
 
 #url = 'https://your-rails-app.com/authenticate'  # Replace with your authentication endpoint URL
 #url = 'http://127.0.0.1:3000/api/auth/login'
-url = 'http://127.0.0.1:3000/login'
+url = 'http://127.0.0.1:3000/user/sign_in'
+#url = 'http://127.0.0.1:3000/login'
 # url = "http://localhost:3000/api/v1/sign_in"
-#data = {
-#    'user': {
-#        'email': 'fake@email.com',
-#        'password': 'password'
-#    }
-#}
-
 data = {
-    'email': 'fake@email.com',
-    'password': 'password'
+    'user': {
+        'email': 'fake@email.com',
+        'password': 'password'
+    }
 }
+
+#data = {
+#    'email': 'fake@email.com',
+#    'password': 'password'
+#}
 
 response = requests.post(url, json=data)
 #response = requests.get(url, auth=('fake@email.com', 'password'))
