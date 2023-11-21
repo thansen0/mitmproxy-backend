@@ -18,12 +18,15 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
         print("context: ", context)
 
         # get data from client and generate server keys
-        username = str(request.username)
+        email = str(request.email)
         deviceId = str(request.deviceId) # I only use it as a str right now, no sense converting it
         client_pubkey = request.clientPubKey
 
         server_privkey = mitmproxy_wireguard.genkey()
         server_pubkey  = mitmproxy_wireguard.pubkey(server_privkey)
+
+        # will return filters for user/device or NaN
+        content_filters = getContentFilters(deviceId);
 
         # create a config file for the new docker container
         docker_config = configparser.ConfigParser()
@@ -34,13 +37,14 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
         }
         docker_config['CLIENT'] = {
             'pub_key': str(client_pubkey),
-            'username': username
+            'email': email,
+            'content_filters': content_filters
         }
-        print("username:", username)
+        print("email:", email)
         print("cpk:", client_pubkey)
-        #with open(username+"-docker.ini") as configfile:
-        # TODO a user email will eventually break this
-        config_path = "./user_configs/"+username+"/"+str(deviceId)+"/config.ini"
+        #with open(email+"-docker.ini") as configfile:
+        # TODO a user email will maybe eventually break this
+        config_path = "./user_configs/"+email+"/"+str(deviceId)+"/config.ini"
         config_path = os.path.join(os.path.abspath(os.getcwd()), config_path)
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         with open(config_path, "w") as configfile:
@@ -49,16 +53,17 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
         # start docker instance independent of python
         client = docker.from_env()
 
+        print("config_path",config_path)
         # pass the key information into docker via a volume
         volume = {
-            '/': {
-                'bind': config_path,
+            config_path: {
+                'bind': '/config.ini',
                 'mode': 'ro'  # 'ro' for read-only, 'rw' for read-write
             }
         }
 
         # Define container settings
-        container_name = username + "_" + deviceId + "_container"
+        container_name = email + "_" + deviceId + "_container"
         container_settings = {
             'image': 'mitmproxy:latest',  # Replace with your desired image name and tag
             'detach': True,  # Run the container in the background
@@ -66,8 +71,7 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
             'volumes': volume,
 #            'remove': True, # automatically removes container when it stops
             'ports': {
-                '51820': 51820,
-                '5000': 5000
+                '51820': 51820
             }
         }
 
@@ -89,13 +93,24 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
 
         # Your server logic here
         response = connection_pb2.ConnectionResp(
-            username=username,
+            email=email,
             serverPubKey=server_pubkey,
             portNumber=5000,
             serverIPAddr=self.ip_addr
         )
         print("returning response")
         return response
+
+
+    def getContentFilters(deviceId):
+        api_url = f'http://localhost:3000/api/v1/devices/{deviceId}'  # Replace with your actual API endpoint
+        response = requests.get(api_url)
+
+        if response.status_code >= 200 and response.status_code < 300:
+            return response.json()['content_filters']
+        else:
+            print(f"Error getting content filter, using default: {response.status_code}")
+            return "NaN"
 
 def run_server():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))

@@ -15,7 +15,7 @@ async def main():
     config = configparser.ConfigParser()
     config.read('config.ini')
     client_pubkey = config['CLIENT']['pub_key']
-    username = config['CLIENT']['username']
+    email = config['CLIENT']['email']
     server_privkey = config['SERVER']['priv_key']
     server_pubkey = config['SERVER']['pub_key']
 
