@@ -26,6 +26,11 @@ class ModifyResponse:
         self.redis_auth = config['REDIS']['redis_auth']
         self.redis_db = int(config['REDIS']['redis_db'])
 
+        # config file loading
+        dynamic_config = configparser.ConfigParser()
+        dynamic_config.read('config.ini')
+        self.content_filters = str(dynamic_config['CLIENT']['content_filter'])
+
         # Connect to Redis
         try:
             self.ri = redis.StrictRedis(host=self.redis_host, port=self.redis_port, db=self.redis_db, password=self.redis_auth, decode_responses=True)
@@ -45,10 +50,11 @@ class ModifyResponse:
         #print("parsed_url:", parsed_url)
 
         # checks if it's a porn link, always blocked
-        url_key = "nsfw:" + parsed_url.netloc
-        if self.ri.exists(url_key):
-            # This should kill the connection
-            return True
+        if "nsfw" in self.content_filters:
+            url_key = "nsfw:" + parsed_url.netloc
+            if self.ri.exists(url_key):
+                # This should kill the connection
+                return True
 
         # Define a regex pattern to extract the domain and subreddit
         elif "reddit.com/r/" in pretty_url:
@@ -62,19 +68,22 @@ class ModifyResponse:
                 subreddit = match.group(1)  # just "subreddit" part
 
                 # checks if this is nsfw sub
-                url_key = f'nsfw:subreddit:{subreddit}'.lower()
-                if self.ri.exists(url_key):
-                    return True
+                if "nsfw" in self.content_filters:
+                    url_key = f'nsfw:subreddit:{subreddit}'.lower()
+                    if self.ri.exists(url_key):
+                        return True
 
                 # checks if this is a pro-trans sub
-                url_key = f'trans:subreddit:{subreddit}'.lower()
-                if self.ri.exists(url_key):
-                    return True
+                if "trans" in self.content_filters:
+                    url_key = f'trans:subreddit:{subreddit}'.lower()
+                    if self.ri.exists(url_key):
+                        return True
 
-                # checks if this is a pro-trans sub
-                url_key = f'lgbt:subreddit:{subreddit}'.lower()
-                if self.ri.exists(url_key):
-                    return True
+                # checks if this is a pro-lgbt sub
+                if "lgbt" in self.content_filters:
+                    url_key = f'lgbt:subreddit:{subreddit}'.lower()
+                    if self.ri.exists(url_key):
+                        return True
 
             return False
 
