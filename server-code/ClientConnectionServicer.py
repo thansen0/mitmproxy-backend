@@ -10,6 +10,9 @@ sys.path.append("./protos")
 import connection_pb2
 import connection_pb2_grpc
 
+import requests
+import re
+
 class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
     ip_addr = "45.76.232.143" # ip addr of server; i.e. computer this is running on
 
@@ -26,7 +29,7 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
         server_pubkey  = mitmproxy_wireguard.pubkey(server_privkey)
 
         # will return filters for user/device or NaN
-        content_filters = getContentFilters(deviceId);
+        content_filters = self.getContentFilters(deviceId);
 
         # create a config file for the new docker container
         docker_config = configparser.ConfigParser()
@@ -42,6 +45,12 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
         }
         print("email:", email)
         print("cpk:", client_pubkey)
+
+        match = re.match(r'^([^@]+)@', email)
+        if match:
+            email = match.group(1)
+        print("new email:", email)
+
         #with open(email+"-docker.ini") as configfile:
         # TODO a user email will maybe eventually break this
         config_path = "./user_configs/"+email+"/"+str(deviceId)+"/config.ini"
@@ -96,15 +105,21 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
             email=email,
             serverPubKey=server_pubkey,
             portNumber=5000,
-            serverIPAddr=self.ip_addr
+            serverIPAddr=self.ip_addr,
+            certificateFileCrt="cert that I need to add at a later date"
         )
         print("returning response")
         return response
 
 
-    def getContentFilters(deviceId):
+    def getContentFilters(self, deviceId):
         api_url = f'http://localhost:3000/api/v1/devices/{deviceId}'  # Replace with your actual API endpoint
-        response = requests.get(api_url)
+        try:
+            response = requests.get(api_url)
+        except:
+            response = None
+            print(f"Cannot connect to server, using defualt content filter")
+            return "NaN"
 
         if response.status_code >= 200 and response.status_code < 300:
             return response.json()['content_filters']
