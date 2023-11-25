@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-service CreateConnection {
+service CreateWGConnection {
     // creates the initial connection
     rpc StartConnection (ConnectionInit) returns (ConnectionResp) {}
 }

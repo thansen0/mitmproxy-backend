@@ -11,7 +11,7 @@ class CreateWGConnection():
     def __init__(self, email):
         # self.server_ip_addr = socket.gethostbyname("vpn.parentcontrols.win")
         self.server_ip_addr = "45.76.232.143"
-        self.server_port_num = 50051
+        self.server_port_num = 50059
         self.email = email
         self.deviceId = 4 # needs to be set later
 
@@ -21,7 +21,7 @@ class CreateWGConnection():
 
     def attemptConnection(self):
         channel = grpc.insecure_channel( self.server_ip_addr + ':' + str(self.server_port_num) )
-        stub = connection_pb2_grpc.CreateConnectionStub(channel)
+        stub = connection_pb2_grpc.CreateWGConnectionStub(channel)
 
         request = connection_pb2.ConnectionInit(
             email=self.email,

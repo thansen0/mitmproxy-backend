@@ -130,7 +130,7 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
 def run_server():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
     connection_pb2_grpc.add_CreateConnectionServicer_to_server(CreateConnectionServicer(), server)
-    server.add_insecure_port("[::]:50051")
+    server.add_insecure_port("[::]:50059")
 
     print("Starting listening server")
     server.start()
