@@ -13,7 +13,7 @@ import connection_pb2_grpc
 import requests
 import re
 
-class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
+class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer):
     ip_addr = "45.76.232.143" # ip addr of server; i.e. computer this is running on
 
     def StartConnection(self, request, context):
@@ -128,11 +128,12 @@ class CreateConnectionServicer(connection_pb2_grpc.CreateConnectionServicer):
             return "NaN"
 
 def run_server():
+    port_num = "50059"
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
-    connection_pb2_grpc.add_CreateConnectionServicer_to_server(CreateConnectionServicer(), server)
-    server.add_insecure_port("[::]:50059")
+    connection_pb2_grpc.add_CreateWGConnectionServicer_to_server(CreateWGConnectionServicer(), server)
+    server.add_insecure_port("[::]:" + port_num)
 
-    print("Starting listening server")
+    print("Starting listening server on port " + port_num)
     server.start()
     server.wait_for_termination()
 
