@@ -24,6 +24,8 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         email = str(request.email)
         deviceId = str(request.deviceId) # I only use it as a str right now, no sense converting it
         client_pubkey = request.clientPubKey
+        print("request dev id: ",request.deviceId)
+        print("deviceId: ", deviceId)
 
         server_privkey = mitmproxy_wireguard.genkey()
         server_pubkey  = mitmproxy_wireguard.pubkey(server_privkey)
@@ -46,6 +48,8 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         print("email:", email)
         print("cpk:", client_pubkey)
 
+        # TODO folder name may not be unique anymore, device will
+        # but should still change
         match = re.match(r'^([^@]+)@', email)
         if match:
             email = match.group(1)
@@ -53,7 +57,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
 
         #with open(email+"-docker.ini") as configfile:
         # TODO a user email will maybe eventually break this
-        config_path = "./user_configs/"+email+"/"+str(deviceId)+"/config.ini"
+        config_path = "user_configs/"+email+"/"+str(deviceId)+"/config.ini"
         config_path = os.path.join(os.path.abspath(os.getcwd()), config_path)
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         with open(config_path, "w") as configfile:

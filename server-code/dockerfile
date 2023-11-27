@@ -32,10 +32,10 @@ RUN unzip nsfw_mobilenet_v2_140_224.zip
 #     rm -rf /var/lib/apt/lists/*
 
 # Start a shell when the container runs
-CMD ["/bin/bash"]
+#CMD ["/bin/bash"]
 #ENTRYPOINT ["mitmdump", "-s", "modify_response.py", "--proxyauth", "username:password", "--set", "block_global=false"]
 #ENTRYPOINT ["mitmdump", "-s", "modify_response.py", "--mode", "wireguard"]
-#ENTRYPOINT ["python", "run_wireguard.py"]
+#ENTRYPOINT ["python3", "run_wireguard.py"]
 
 # production arguments
-#ENTRYPOINT ["python", "terminal_run_wireguard.py"]
+ENTRYPOINT ["python3", "terminal_run_wireguard.py"]
