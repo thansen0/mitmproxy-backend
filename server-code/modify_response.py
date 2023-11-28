@@ -29,7 +29,7 @@ class ModifyResponse:
         # config file loading
         dynamic_config = configparser.ConfigParser()
         dynamic_config.read('config.ini')
-        self.content_filters = str(dynamic_config['CLIENT']['content_filter'])
+        self.content_filters = str(dynamic_config['CLIENT']['content_filters'])
 
         # Connect to Redis
         try:

@@ -30,11 +30,10 @@ async def main():
 
     ########################
     wg0conf_path = "/wg0.conf"
-    client_ip_addr = "71.87.47.163" # maybe 0.0.0.0?
 
     conf_file_contents = f"""
 [Interface]
-Address = 10.0.0.1/24
+Address = 10.0.0.1/32
 SaveConfig = true
 PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o enp1s0 -j MASQUERADE; iptables -t nat -A PREROUTING -i wg0 -p tcp -m tcp --dport 80 -j REDIRECT --to-port 8080; iptables -t nat -A PREROUTING -i wg0 -p tcp -m tcp --dport 443 -j REDIRECT --to-port 8080
 PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o enp1s0 -j MASQUERADE; iptables -t nat -D PREROUTING -i wg0 -p tcp -m tcp --dport 80 -j REDIRECT --to-port 8080; iptables -t nat -D PREROUTING -i wg0 -p tcp -m tcp --dport 443 -j REDIRECT --to-port 8080
@@ -43,8 +42,7 @@ PrivateKey = {server_privkey}
 
 [Peer]
 PublicKey = {client_pubkey}
-AllowedIPs = 10.0.0.2/32
-Endpoint = {client_ip_addr}:51820
+AllowedIPs = 10.0.0.2/24
     """
 
     # create wgo.conf file

@@ -30,6 +30,9 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         server_privkey = mitmproxy_wireguard.genkey()
         server_pubkey  = mitmproxy_wireguard.pubkey(server_privkey)
 
+        # need to generate port that's not being used
+        wireguard_port = 51820
+
         # will return filters for user/device or NaN
         content_filters = self.getContentFilters(deviceId);
 
@@ -38,7 +41,8 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         docker_config['SERVER'] = {
             'priv_key': str(server_privkey),
             'pub_key': str(server_pubkey),
-            'ip_addr': self.ip_addr
+            'ip_addr': self.ip_addr,
+            'wg_port': str(wireguard_port)
         }
         docker_config['CLIENT'] = {
             'pub_key': str(client_pubkey),
@@ -66,7 +70,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         # start docker instance independent of python
         client = docker.from_env()
 
-        print("config_path",config_path)
+        print("config_path", config_path)
         # pass the key information into docker via a volume
         volume = {
             config_path: {
@@ -84,7 +88,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
             'volumes': volume,
 #            'remove': True, # automatically removes container when it stops
             'ports': {
-                '51820': 51820
+                str(wireguard_port): 51820
             }
         }
 
@@ -108,7 +112,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         response = connection_pb2.ConnectionResp(
             email=email,
             serverPubKey=server_pubkey,
-            portNumber=5000,
+            portNumber=wireguard_port,
             serverIPAddr=self.ip_addr,
             certificateFileCrt="cert that I need to add at a later date"
         )
