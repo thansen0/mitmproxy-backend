@@ -45,3 +45,27 @@ On the server wireguard usually runs on 51280 and you have to pass in the config
 ```
 docker run -p 51820:51820 -v /home/mitm/Code/mitmproxy/server-code/user_configs/username/0/config.ini:/config.ini -it mitmproxy
 ```
+
+A great line to test if I'm seeing data over a port is 
+
+```
+sudo tcpdump -i any -nn port 51820
+```
+
+### mitmproxy wireguard
+
+We can set custom keys and port with the [command line option](https://docs.mitmproxy.org/stable/concepts-modes/#wireguard-transparent-proxy) as well
+
+```
+mitmdump -s modify_response.py --mode wireguard:~/Code/mitmproxy/server-code/wireguard.conf@51820
+```
+
+Where `wireguard.conf` is the private key for both the client and server
+
+```
+{
+    "server_key": "server_priv_key"
+    "client_key": "client_priv_key"
+}
+```
+

@@ -13,14 +13,14 @@ public_ip_addr = "45.76.232.143" # ip you would ping to reach host server
 async def main():
     def receive_datagram(data, src_addr, dst_addr):
         #logger.debug(f"Received datagram: {data=} {src_addr=} {dst_addr=}")
-        server.send_datagram(data.upper(), dst_addr, src_addr)
+        wg_server.send_datagram(data.upper(), dst_addr, src_addr)
         #logger.debug("Echoed datagram.")
 
     # import configuration files information
     config = configparser.ConfigParser()
     config.read('config.ini')
     client_pubkey = config['CLIENT']['pub_key']
-    username = config['CLIENT']['username']
+    username = config['CLIENT']['email']
     server_privkey = config['SERVER']['priv_key']
     server_pubkey = config['SERVER']['pub_key']
 
@@ -91,9 +91,11 @@ async def handle_connection(rw: mitmproxy_wireguard.TcpStream):
 #            AllowedIPs = 10.0.0.0/24
 #            Endpoint = {public_ip_addr}:51820
 #        """)
-
-    return client_conf
+#
+#    return client_conf
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main(), debug=True)
+    #loop = asyncio.get_event_loop()
+    #loop.run_until_complete(main(), debug=True)
     
