@@ -40,10 +40,10 @@ If I built a container and then stopped it, I can re enter it using exec
 docker exec -it container_name /bin/bash
 ```
 
-On the server wireguard usually runs on 51280 and you have to pass in the config.ini for terminal_run_wireguard.py to work, so you'll want to enable that port as well
+On the server wireguard usually runs on 51280 and you have to pass in the config.ini for terminal_run_wireguard.py to work, so you'll want to enable that port as well. We must specifically use /udp, otherwise it only allows tcp
 
 ```
-docker run -p 51820:51820 -v /home/mitm/Code/mitmproxy/server-code/user_configs/username/0/config.ini:/config.ini -it mitmproxy
+docker run -p 51820:51820/udp --network=bridge -v /home/mitm/Code/mitmproxy/server-code/user_configs/username/0/config.ini:/config.ini -it mitmproxy
 ```
 
 A great line to test if I'm seeing data over a port is 

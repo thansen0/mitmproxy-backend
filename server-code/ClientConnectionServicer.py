@@ -1,6 +1,6 @@
 import grpc
 from concurrent import futures
-import mitmproxy_wireguard
+import mitmproxy_rs
 import sys
 import os
 import docker
@@ -27,8 +27,11 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         print("request dev id: ",request.deviceId)
         print("deviceId: ", deviceId)
 
-        server_privkey = mitmproxy_wireguard.genkey()
-        server_pubkey  = mitmproxy_wireguard.pubkey(server_privkey)
+        # TODO uncomnment, should generate new keys each time
+        server_privkey = mitmproxy_rs.genkey()
+        server_pubkey  = mitmproxy_rs.pubkey(server_privkey)
+        #server_privkey = 
+        #server_pubkey  = mitmproxy_wireguard.pubkey(server_privkey)
 
         # need to generate port that's not being used
         wireguard_port = 51820
@@ -84,12 +87,13 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         container_settings = {
             'image': 'mitmproxy:latest',  # Replace with your desired image name and tag
             'detach': True,  # Run the container in the background
+            'network_mode': 'host',
             'name': container_name,  # Assign a name to the container
             'volumes': volume,
 #            'remove': True, # automatically removes container when it stops
-            'ports': {
-                str(wireguard_port): 51820
-            }
+#            'ports': {
+#                str(wireguard_port): 51820
+#            }
         }
 
         # check if the container already exists, if so remove it
@@ -102,6 +106,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         except:
             print("Container didn't exist")
 
+        # TODO TODO undo comment out
         # Start the Docker container
         container = client.containers.run(**container_settings)
 

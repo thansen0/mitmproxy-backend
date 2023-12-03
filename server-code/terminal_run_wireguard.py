@@ -1,9 +1,11 @@
-import mitmproxy_wireguard
+#import mitmproxy_wireguard
 import asyncio
 import logging
 import time
 import configparser
 import subprocess
+from pathlib import Path
+import json
 
 logging.Formatter.convert = time.gmtime
 logger = logging.getLogger()
@@ -29,39 +31,49 @@ async def main():
     #)
 
     ########################
-    wg0conf_path = "/wg0.conf"
+    # construct wireguard.conf key file
+    conf_path = Path("wireguard.conf")
+    conf_path.write_text(
+        json.dumps(
+            {
+                "server_key": server_privkey,
+                "client_key": client_pubkey,
+            },
+            indent = 4,
+        )
+    )
 
-    conf_file_contents = f"""
-[Interface]
-Address = 10.0.0.1/32
-SaveConfig = true
-PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o enp1s0 -j MASQUERADE; iptables -t nat -A PREROUTING -i wg0 -p tcp -m tcp --dport 80 -j REDIRECT --to-port 8080; iptables -t nat -A PREROUTING -i wg0 -p tcp -m tcp --dport 443 -j REDIRECT --to-port 8080
-PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o enp1s0 -j MASQUERADE; iptables -t nat -D PREROUTING -i wg0 -p tcp -m tcp --dport 80 -j REDIRECT --to-port 8080; iptables -t nat -D PREROUTING -i wg0 -p tcp -m tcp --dport 443 -j REDIRECT --to-port 8080
-ListenPort = 51820
-PrivateKey = {server_privkey}
+    conf_file_path = str(conf_path.absolute())
 
-[Peer]
-PublicKey = {client_pubkey}
-AllowedIPs = 10.0.0.2/24
-    """
+
+
+#    wg0conf_path = "wg0.conf"
+#
+#    conf_file_contents = f"""
+#[Interface]
+#Address = 10.0.0.1/32
+#SaveConfig = true
+#PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o enp1s0 -j MASQUERADE; iptables -t nat -A PREROUTING -i wg0 -p tcp -m tcp --dport 80 -j REDIRECT --to-port 8080; iptables -t nat -A PREROUTING -i wg0 -p tcp -m tcp --dport 443 -j REDIRECT --to-port 8080
+#PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o enp1s0 -j MASQUERADE; iptables -t nat -D PREROUTING -i wg0 -p tcp -m tcp --dport 80 -j REDIRECT --to-port 8080; iptables -t nat -D PREROUTING -i wg0 -p tcp -m tcp --dport 443 -j REDIRECT --to-port 8080
+#ListenPort = 51820
+#PrivateKey = {server_privkey}
+#
+#[Peer]
+#PublicKey = {client_pubkey}
+#AllowedIPs = 10.0.0.2/24
+#    """
 
     # create wgo.conf file
-    with open(wg0conf_path, "w") as conf_file:
-        conf_file.write(conf_file_contents)
+#    with open(wg0conf_path, "w") as conf_file:
+#        conf_file.write(conf_file_contents)
 
-    print("starting server")
-    subprocess.run(["mitmdump", "-s", "modify_response.py", "--mode", "wireguard", "--certs", "/etc/keys/cert.pem"], shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    logger.info(f"starting server with wireguard keys at {conf_file_path}")
+    subprocess.run(["mitmdump", "-s", "modify_response.py", "--mode", f"wireguard:{conf_file_path}@51820"]) # , stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    #subprocess.run(["mitmdump", "-s", "modify_response.py", "--mode", "wireguard", "--certs", "/etc/keys/cert.pem"], shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
     ########################
-
-
-
-
-#    client_conf = gen_client_conf(client_privkey, server_pubkey)
-#    print(client_conf)
-
-    print("waiting on server to close")
+    logger.info("waiting on server to close")
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
