@@ -5,6 +5,7 @@ import sys
 import os
 import docker
 import configparser
+import socket
 
 sys.path.append("./protos")
 import connection_pb2
@@ -33,12 +34,17 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         #server_privkey = 
         #server_pubkey  = mitmproxy_wireguard.pubkey(server_privkey)
 
-        # need to generate port that's not being used
-        wireguard_port = 51820
-
         # will return filters for user/device or NaN
         content_filters = self.getContentFilters(deviceId);
 
+        # need to generate port that's not being used
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(('', 0))
+        addr = s.getsockname()
+        wireguard_port = s.getsockname()[1]
+        s.close()
+        print("wireguard connection port: ", wireguard_port)
+        
         # create a config file for the new docker container
         docker_config = configparser.ConfigParser()
         docker_config['SERVER'] = {

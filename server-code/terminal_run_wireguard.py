@@ -20,6 +20,7 @@ async def main():
     email = config['CLIENT']['email']
     server_privkey = config['SERVER']['priv_key']
     server_pubkey = config['SERVER']['pub_key']
+    wg_port = config['SERVER']['wg_port']
 
     ########################
     # construct wireguard.conf key file
@@ -38,7 +39,7 @@ async def main():
 
 
     logger.info(f"starting server with wireguard keys at {conf_file_path}")
-    subprocess.run(["mitmdump", "-s", "modify_response.py", "--mode", f"wireguard:{conf_file_path}@51820"]) # , stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["mitmdump", "-s", "modify_response.py", "--mode", f"wireguard:{conf_file_path}@{wg_port}"]) # , stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
     ########################

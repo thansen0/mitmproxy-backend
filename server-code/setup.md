@@ -69,3 +69,11 @@ Where `wireguard.conf` is the private key for both the client and server
 }
 ```
 
+# Production
+
+When running production you should be able to run `ClientConnectionServicer.py` and it will do everything else for you. Since this randomly chooses ports, we must allow ports through ufw. I did `sudo ufw disable` to turn off the firewall. This may want to be revised in the future but for now I think it's fine.
+
+```
+python ClientConnectionServicer.py
+```
+
