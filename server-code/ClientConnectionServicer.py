@@ -6,11 +6,13 @@ import os
 import docker
 import configparser
 import socket
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.serialization import Encoding
 
 sys.path.append("./protos")
 import connection_pb2
 import connection_pb2_grpc
-
 import requests
 import re
 
@@ -33,6 +35,12 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         server_pubkey  = mitmproxy_rs.pubkey(server_privkey)
         #server_privkey = 
         #server_pubkey  = mitmproxy_wireguard.pubkey(server_privkey)
+
+        # read public .crt key
+        with open('cert.crt', 'rb') as f:
+            cert_content = f.read()
+        cert = x509.load_pem_x509_certificate(cert_content, default_backend())
+        crt_str = cert.public_bytes(encoding=Encoding.PEM).decode()
 
         # will return filters for user/device or NaN
         content_filters = self.getContentFilters(deviceId);
@@ -125,7 +133,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
             serverPubKey=server_pubkey,
             portNumber=wireguard_port,
             serverIPAddr=self.ip_addr,
-            certificateFileCrt="cert that I need to add at a later date"
+            certificateFileCrt=crt_str
         )
         print("returning response")
         return response

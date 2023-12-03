@@ -30,7 +30,7 @@ async def main():
             {
                 "server_key": server_privkey,
                 "client_key": client_pubkey,
-            },
+                },
             indent = 4,
         )
     )
@@ -39,7 +39,7 @@ async def main():
 
 
     logger.info(f"starting server with wireguard keys at {conf_file_path}")
-    subprocess.run(["mitmdump", "-s", "modify_response.py", "--mode", f"wireguard:{conf_file_path}@{wg_port}"]) # , stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["mitmdump", "-s", "modify_response.py", "--mode", f"wireguard:{conf_file_path}@{wg_port}", "--certs", "*=cert.pem"]) # , stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
     ########################
