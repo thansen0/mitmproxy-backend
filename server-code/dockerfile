@@ -16,6 +16,7 @@ COPY protos/ protos/
 COPY run_wireguard.py .
 COPY wireguard_server_impl.py .
 COPY wireguard.conf .
+COPY cert.pem .
 
 # Update package lists and install necessary dependencies
 RUN apt update -y && apt upgrade -y && \

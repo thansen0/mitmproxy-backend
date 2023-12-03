@@ -40,7 +40,8 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         with open('cert.crt', 'rb') as f:
             cert_content = f.read()
         cert = x509.load_pem_x509_certificate(cert_content, default_backend())
-        crt_str = cert.public_bytes(encoding=Encoding.PEM).decode()
+        #crt_str = cert.public_bytes(encoding=Encoding.PEM).decode()
+        crt_str = cert.public_bytes(encoding=Encoding.PEM) # bytes
 
         # will return filters for user/device or NaN
         content_filters = self.getContentFilters(deviceId);

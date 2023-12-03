@@ -77,3 +77,10 @@ When running production you should be able to run `ClientConnectionServicer.py` 
 python ClientConnectionServicer.py
 ```
 
+You also must create the certificate files, specifically two: public key (cert.crt), and public private combo (cert.pem)
+
+```
+openssl genrsa -out cert.key 2048
+openssl req -new -x509 -key cert.key -out cert.crt
+cat cert.key cert.crt > cert.pem
+```
