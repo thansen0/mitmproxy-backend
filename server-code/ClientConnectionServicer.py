@@ -157,21 +157,21 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
 
 def run_server():
     port_num = "50059"
-    #server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
-    #connection_pb2_grpc.add_CreateWGConnectionServicer_to_server(CreateWGConnectionServicer(), server)
-    #server.add_insecure_port("[::]:" + port_num)
-
+    """
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
+    connection_pb2_grpc.add_CreateWGConnectionServicer_to_server(CreateWGConnectionServicer(), server)
+    server.add_insecure_port("[::]:" + port_num)
+    """
     # Load SSL certificates
-    with open('protos/cert.crt', 'rb') as f:
+    with open('protos/cert.pem', 'rb') as f:
         server_certificate = f.read()
     with open('protos/cert.key', 'rb') as f:
         server_private_key = f.read()
 
     server_credentials = grpc.ssl_server_credentials([(server_private_key, server_certificate)])
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
     connection_pb2_grpc.add_CreateWGConnectionServicer_to_server(CreateWGConnectionServicer(), server)
-    server.add_secure_port('[::]:'+port_num, server_credentials)
-
+    server.add_secure_port("[::]:"+port_num, server_credentials)
     print("Starting listening server on port " + port_num)
     server.start()
     server.wait_for_termination()
