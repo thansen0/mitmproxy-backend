@@ -85,6 +85,16 @@ openssl req -new -x509 -key cert.key -out cert.crt
 cat cert.key cert.crt > cert.pem
 ```
 
+or using the `openssl.conf` file, we can build it using
+
+```
+openssl genrsa -out cert.key 2048
+openssl req -new -x509 -key cert.key -out cert.crt -days 365 -config openssl.cnf
+cat cert.key cert.crt > cert.pem
+
+openssl x509 -in cert.crt -text -noout # for verification only
+```
+
 ## Resources used
 
 Each container takes about a half gig of ram, and a simple website with images can take 10-15% of each core on my two core regular cloud compute module (2GB RAM). A text website consumes basically no processing power. Getting a GPU powered box should be a high priority for production.
