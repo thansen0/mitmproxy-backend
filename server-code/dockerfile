@@ -15,16 +15,23 @@ COPY protos/ protos/
 
 COPY run_wireguard.py .
 COPY wireguard_server_impl.py .
+COPY wireguard.conf .
+COPY cert.pem .
 
 # Update package lists and install necessary dependencies
 RUN apt update -y && apt upgrade -y && \
     apt install -y python3-pip
-RUN apt install -y apt-utils wget unzip git wireguard
+RUN apt install -y apt-utils wget unzip git wireguard python3.10-venv vim netcat
 
+RUN mkdir venv && python3 -m venv venv
+ENV PATH="/venv/bin:$PATH"
 # Install TensorFlow using pip
-RUN pip3 install protobuf==3.20.*
-RUN pip3 install tensorflow==2.12.1
-RUN pip3 install nsfw-detector mitmproxy mitmproxy-wireguard redis grpcio
+RUN pip3 install protobuf==3.20.* tensorflow==2.12.1
+RUN pip3 install nsfw-detector redis grpcio
+
+# build "custom" version of mitmproxy
+RUN git clone https://github.com/thansen0/mitmproxy-pubkey.git
+RUN cd mitmproxy-pubkey && pip3 install .
 
 #RUN wget https://github.com/GantMan/nsfw_model/releases/download/1.1.0/nsfw_mobilenet_v2_140_224.zip && unzip nsfw_mobilenet_v2_140_224.zip
 COPY nsfw_mobilenet_v2_140_224.zip .

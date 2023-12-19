@@ -18,6 +18,7 @@ class CreateWGConnection():
         self.client_privkey = mitmproxy_wireguard.genkey()
         self.client_pubkey  = mitmproxy_wireguard.pubkey(self.client_privkey)
 
+        print(self.deviceId)
 
     def attemptConnection(self):
         channel = grpc.insecure_channel( self.server_ip_addr + ':' + str(self.server_port_num) )
@@ -25,7 +26,8 @@ class CreateWGConnection():
 
         request = connection_pb2.ConnectionInit(
             email=self.email,
-            clientPubKey=self.client_pubkey
+            clientPubKey=self.client_pubkey,
+            deviceId=self.deviceId
         )
         response = stub.StartConnection(request)
     
@@ -33,7 +35,7 @@ class CreateWGConnection():
         print("Server Public Key:", response.serverPubKey)
         print("Server Port Number:", response.portNumber)
         print("Server IP Address:", response.serverIPAddr)
-        print("certificateFileCrt:", response.certificateFileCrt)
+        print("certificateFileCrt:", response.certificateFileCrt.decode()) # note: untested with bytes
 
 
 wg = CreateWGConnection("email@email.com")

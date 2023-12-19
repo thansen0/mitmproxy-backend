@@ -40,10 +40,10 @@ If I built a container and then stopped it, I can re enter it using exec
 docker exec -it container_name /bin/bash
 ```
 
-On the server wireguard usually runs on 51280 and you have to pass in the config.ini for terminal_run_wireguard.py to work, so you'll want to enable that port as well
+On the server wireguard usually runs on 51280 and you have to pass in the config.ini for terminal_run_wireguard.py to work, so you'll want to enable that port as well. We must specifically use /udp, otherwise it only allows tcp
 
 ```
-docker run -p 51820:51820 -v /home/mitm/Code/mitmproxy/server-code/user_configs/username/0/config.ini:/config.ini -it mitmproxy
+docker run -p 51820:51820/udp --network=bridge -v /home/mitm/Code/mitmproxy/server-code/user_configs/username/0/config.ini:/config.ini -it mitmproxy
 ```
 
 A great line to test if I'm seeing data over a port is 
@@ -69,3 +69,34 @@ Where `wireguard.conf` is the private key for both the client and server
 }
 ```
 
+# Production
+
+When running production you should be able to run `ClientConnectionServicer.py` and it will do everything else for you. Since this randomly chooses ports, we must allow ports through ufw. I did `sudo ufw disable` to turn off the firewall. This may want to be revised in the future but for now I think it's fine.
+
+```
+python ClientConnectionServicer.py
+```
+
+You also must create the certificate files, specifically two: public key (cert.crt), and public private combo (cert.pem)
+
+```
+openssl genrsa -out cert.key 2048
+openssl req -new -x509 -key cert.key -out cert.crt
+cat cert.key cert.crt > cert.pem
+```
+
+or using the `openssl.conf` file, we can build it using
+
+```
+openssl genrsa -out cert.key 2048
+openssl req -new -x509 -key cert.key -out cert.crt -days 365 -config openssl.cnf
+cat cert.key cert.crt > cert.pem
+
+openssl x509 -in cert.crt -text -noout # for verification only
+```
+
+## Resources used
+
+Each container takes about a half gig of ram, and a simple website with images can take 10-15% of each core on my two core regular cloud compute module (2GB RAM). A text website consumes basically no processing power. Getting a GPU powered box should be a high priority for production.
+
+Starting a docker container brings a single core up to 100% for a second or two. Also we need to be sure we're deleting the image in code at some point because they take up a lot of storage space.

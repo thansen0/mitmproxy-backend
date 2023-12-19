@@ -1,15 +1,18 @@
 import grpc
 from concurrent import futures
-import mitmproxy_wireguard
+import mitmproxy_rs
 import sys
 import os
 import docker
 import configparser
+import socket
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.serialization import Encoding
 
 sys.path.append("./protos")
 import connection_pb2
 import connection_pb2_grpc
-
 import requests
 import re
 
@@ -27,15 +30,30 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         print("request dev id: ",request.deviceId)
         print("deviceId: ", deviceId)
 
-        server_privkey = mitmproxy_wireguard.genkey()
-        server_pubkey  = mitmproxy_wireguard.pubkey(server_privkey)
+        # TODO uncomnment, should generate new keys each time
+        server_privkey = mitmproxy_rs.genkey()
+        server_pubkey  = mitmproxy_rs.pubkey(server_privkey)
+        #server_privkey = 
+        #server_pubkey  = mitmproxy_wireguard.pubkey(server_privkey)
 
-        # need to generate port that's not being used
-        wireguard_port = 51820
+        # read public .crt key
+        with open('cert.crt', 'rb') as f:
+            cert_content = f.read()
+        cert = x509.load_pem_x509_certificate(cert_content, default_backend())
+        #crt_str = cert.public_bytes(encoding=Encoding.PEM).decode()
+        crt_str = cert.public_bytes(encoding=Encoding.PEM) # bytes
 
         # will return filters for user/device or NaN
         content_filters = self.getContentFilters(deviceId);
 
+        # need to generate port that's not being used
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(('', 0))
+        addr = s.getsockname()
+        wireguard_port = s.getsockname()[1]
+        s.close()
+        print("wireguard connection port: ", wireguard_port)
+        
         # create a config file for the new docker container
         docker_config = configparser.ConfigParser()
         docker_config['SERVER'] = {
@@ -84,12 +102,13 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         container_settings = {
             'image': 'mitmproxy:latest',  # Replace with your desired image name and tag
             'detach': True,  # Run the container in the background
+            'network_mode': 'host',
             'name': container_name,  # Assign a name to the container
             'volumes': volume,
 #            'remove': True, # automatically removes container when it stops
-            'ports': {
-                str(wireguard_port): 51820
-            }
+#            'ports': {
+#                str(wireguard_port): 51820
+#            }
         }
 
         # check if the container already exists, if so remove it
@@ -102,6 +121,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         except:
             print("Container didn't exist")
 
+        # TODO TODO undo comment out
         # Start the Docker container
         container = client.containers.run(**container_settings)
 
@@ -114,7 +134,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
             serverPubKey=server_pubkey,
             portNumber=wireguard_port,
             serverIPAddr=self.ip_addr,
-            certificateFileCrt="cert that I need to add at a later date"
+            certificateFileCrt=crt_str
         )
         print("returning response")
         return response
@@ -137,10 +157,21 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
 
 def run_server():
     port_num = "50059"
+    """
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
     connection_pb2_grpc.add_CreateWGConnectionServicer_to_server(CreateWGConnectionServicer(), server)
     server.add_insecure_port("[::]:" + port_num)
+    """
+    # Load SSL certificates
+    with open('protos/cert.pem', 'rb') as f:
+        server_certificate = f.read()
+    with open('protos/cert.key', 'rb') as f:
+        server_private_key = f.read()
 
+    server_credentials = grpc.ssl_server_credentials([(server_private_key, server_certificate)])
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
+    connection_pb2_grpc.add_CreateWGConnectionServicer_to_server(CreateWGConnectionServicer(), server)
+    server.add_secure_port("[::]:"+port_num, server_credentials)
     print("Starting listening server on port " + port_num)
     server.start()
     server.wait_for_termination()

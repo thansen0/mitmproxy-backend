@@ -1,3 +1,6 @@
 connection_pb2.py
 connection_pb2_grpc.py
 __pycache__
+*.key
+*.crt
+*.pem

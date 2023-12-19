@@ -1,4 +1,4 @@
-from mitmproxy import ctx, http
+from mitmproxy import http
 import numpy as np
 from nsfw_detector import predict
 from urllib.parse import urlparse
@@ -30,6 +30,9 @@ class ModifyResponse:
         dynamic_config = configparser.ConfigParser()
         dynamic_config.read('config.ini')
         self.content_filters = str(dynamic_config['CLIENT']['content_filters'])
+        if self.content_filters.__eq__("NaN"):
+            # if NaN, default to filter everything
+            self.content_filters = "trans,lgbt,nsfw"
 
         # Connect to Redis
         try:
