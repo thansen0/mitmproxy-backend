@@ -12,6 +12,7 @@ COPY terminal_run_wireguard.py .
 COPY ./keys /etc/keys
 COPY RecieveConnections.py .
 COPY protos/ protos/
+COPY .mitmproxy/ .mitmproxy/
 
 COPY run_wireguard.py .
 COPY wireguard_server_impl.py .
@@ -27,7 +28,7 @@ RUN mkdir venv && python3 -m venv venv
 ENV PATH="/venv/bin:$PATH"
 # Install TensorFlow using pip
 RUN pip3 install protobuf==3.20.* tensorflow==2.12.1
-RUN pip3 install nsfw-detector redis grpcio
+RUN pip3 install nsfw-detector redis grpcio # mitmproxy
 
 # build "custom" version of mitmproxy
 RUN git clone https://github.com/thansen0/mitmproxy-pubkey.git

@@ -37,7 +37,8 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         #server_pubkey  = mitmproxy_wireguard.pubkey(server_privkey)
 
         # read public .crt key
-        with open('cert.crt', 'rb') as f:
+        #with open('cert.crt', 'rb') as f:
+        with open('.mitmproxy/mitmproxy-ca-cert.cer', 'rb') as f:
             cert_content = f.read()
         cert = x509.load_pem_x509_certificate(cert_content, default_backend())
         #crt_str = cert.public_bytes(encoding=Encoding.PEM).decode()
@@ -157,11 +158,6 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
 
 def run_server():
     port_num = "50059"
-    """
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
-    connection_pb2_grpc.add_CreateWGConnectionServicer_to_server(CreateWGConnectionServicer(), server)
-    server.add_insecure_port("[::]:" + port_num)
-    """
     # Load SSL certificates
     with open('protos/cert.pem', 'rb') as f:
         server_certificate = f.read()
