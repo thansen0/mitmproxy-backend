@@ -44,6 +44,8 @@ On the server wireguard usually runs on 51280 and you have to pass in the config
 
 ```
 docker run -p 51820:51820/udp --network=bridge -v /home/mitm/Code/mitmproxy/server-code/user_configs/username/0/config.ini:/config.ini -it mitmproxy
+
+docker run --network=host -v /home/mitm/Code/mitmproxy/server-code/user_configs/fake/77/config.ini:/config.ini -it mitmproxy
 ```
 
 A great line to test if I'm seeing data over a port is 
