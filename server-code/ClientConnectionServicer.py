@@ -6,6 +6,7 @@ import os
 import docker
 import configparser
 import socket
+import threading
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import Encoding
@@ -19,25 +20,39 @@ import re
 class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer):
     ip_addr = "45.76.232.143" # ip addr of server; i.e. computer this is running on
 
+
     def StartConnection(self, request, context):
         print("request: ", request)
-        print("context: ", context)
 
         # get data from client and generate server keys
         email = str(request.email)
         deviceId = str(request.deviceId) # I only use it as a str right now, no sense converting it
         client_pubkey = request.clientPubKey
+        access_token = request.accessToken
         print("request dev id: ",request.deviceId)
-        print("deviceId: ", deviceId)
 
-        # TODO uncomnment, should generate new keys each time
+
+        # TODO folder name may not be unique anymore, device will
+        # but should still change
+        match = re.match(r'^([^@]+)@', email)
+        if match:
+            email = match.group(1)
+        container_name = email + "_" + deviceId + "_container"
+        print(f"Container name: {container_name}")
+
+        # start docker instance independent of python
+        self.client = docker.from_env()
+
+        # start new thread to delete old container
+        del_container_thread = threading.Thread(target=self.deleteExistingContainer, args=(container_name,))
+        del_container_thread.start()
+
+
+        # generate priv key for wireguard server
         server_privkey = mitmproxy_rs.genkey()
         server_pubkey  = mitmproxy_rs.pubkey(server_privkey)
-        #server_privkey = 
-        #server_pubkey  = mitmproxy_wireguard.pubkey(server_privkey)
 
         # read public .crt key
-        #with open('cert.crt', 'rb') as f:
         with open('.mitmproxy/mitmproxy-ca-cert.cer', 'rb') as f:
             cert_content = f.read()
         cert = x509.load_pem_x509_certificate(cert_content, default_backend())
@@ -45,7 +60,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         crt_str = cert.public_bytes(encoding=Encoding.PEM) # bytes
 
         # will return filters for user/device or NaN
-        content_filters = self.getContentFilters(deviceId);
+        content_filters = self.getContentFilters(access_token);
 
         # need to generate port that's not being used
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -71,13 +86,6 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         print("email:", email)
         print("cpk:", client_pubkey)
 
-        # TODO folder name may not be unique anymore, device will
-        # but should still change
-        match = re.match(r'^([^@]+)@', email)
-        if match:
-            email = match.group(1)
-        print("new email:", email)
-
         #with open(email+"-docker.ini") as configfile:
         # TODO a user email will maybe eventually break this
         config_path = "user_configs/"+email+"/"+str(deviceId)+"/config.ini"
@@ -85,9 +93,6 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         with open(config_path, "w") as configfile:
             docker_config.write(configfile)
-
-        # start docker instance independent of python
-        client = docker.from_env()
 
         print("config_path", config_path)
         # pass the key information into docker via a volume
@@ -99,7 +104,6 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         }
 
         # Define container settings
-        container_name = email + "_" + deviceId + "_container"
         container_settings = {
             'image': 'mitmproxy:latest',  # Replace with your desired image name and tag
             'detach': True,  # Run the container in the background
@@ -112,19 +116,12 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
 #            }
         }
 
-        # check if the container already exists, if so remove it
-        try:
-            existing_container = client.containers.get(container_name)
-            if existing_container:
-                existing_container.stop()
-                existing_container.remove()
-                print("DELETED existing container ", container_name)
-        except:
-            print("Container didn't exist")
 
-        # TODO TODO undo comment out
+        # wait for old container to be deleted
+        del_container_thread.join()
+
         # Start the Docker container
-        container = client.containers.run(**container_settings)
+        container = self.client.containers.run(**container_settings)
 
         # Optional: Print container ID
         print(f"Container ID: {container.id}")
@@ -140,21 +137,39 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         print("returning response")
         return response
 
-
-    def getContentFilters(self, deviceId):
-        api_url = f'http://localhost:3000/api/v1/devices/{deviceId}'  # Replace with your actual API endpoint
+    def deleteExistingContainer(self, container_name):
+        # check if the container already exists, if so remove it
+        # note: this takes ~10s to run
         try:
-            response = requests.get(api_url)
+            existing_container = self.client.containers.get(container_name)
+            if existing_container:
+                existing_container.stop()
+                existing_container.remove()
+                print("DELETED existing container ", container_name)
+        except:
+            print("Container didn't exist")
+
+
+    def getContentFilters(self, access_token):
+        #api_url = f'http://localhost:3000/api/v1/devices/{deviceId}'  # Replace with your actual API endpoint
+        api_url = f'https://gargantuan-unwritten-carp.gigalixirapp.com/api/v1/getContentFilters'
+        headers = {'Authorization': f'{access_token}', 'Content-Type': 'application/json'}
+
+        try:
+            response = requests.get(api_url, headers=headers)
         except:
             response = None
             print(f"Cannot connect to server, using defualt content filter")
             return "NaN"
 
         if response.status_code >= 200 and response.status_code < 300:
-            return response.json()['content_filters']
+            return response.json().get('data').get('content_filters')
         else:
+            # User may not have an account anymore, may want to just block conn
             print(f"Error getting content filter, using default: {response.status_code}")
             return "NaN"
+
+
 
 def run_server():
     port_num = "50059"
