@@ -61,7 +61,6 @@ class ModifyResponse:
 
         # Define a regex pattern to extract the domain and subreddit
         elif "reddit.com/r/" in pretty_url:
-            #pattern = r'(?:www\.)?reddit\.com:(\d+)/r/(\w+)'
             pattern = r"/r/([^/]+)/"
     
             match = re.search(pattern, pretty_url)            

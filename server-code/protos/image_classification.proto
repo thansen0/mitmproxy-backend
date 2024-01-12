@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+service ClassifyImage {
+    // creates the initial connection
+    rpc StartClassification (ImageMessage) returns (ImageResponse) {}
+}
+
+message NLImage {
+    int32 color = 1;
+    bytes data = 2;
+    int32 width = 3;
+    int32 height = 4;
+    string img_format = 5;
+}
+
+message ImageMessage {
+    NLImage image = 1;
+}
+
+message ImageResponse {
+    float drawings = 1;
+    float hentai = 2;
+    float neutral = 3;
+    float porn = 4;
+    float sexy = 5;
+}
