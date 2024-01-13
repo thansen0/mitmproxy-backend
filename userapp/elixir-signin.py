@@ -1,7 +1,7 @@
 import requests
 
 def authenticate_user(email, password):
-    url = "http://localhost:4000/api/sessions"
+    url = "http://localhost:4000/api/v1/session"
     # url = "http://localhost:4000/api/api_devices"
     headers = {"Content-Type": "application/json"}
     data = {
@@ -10,6 +10,8 @@ def authenticate_user(email, password):
             "password": password
         }
     }
+
+    print(url)
     response = requests.post(url, json=data, headers=headers)
     return response #response.json()
 

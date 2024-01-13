@@ -3,8 +3,8 @@ import json
 from io import StringIO
 
 def authenticate_user(email, password):
-    #url = "http://localhost:4000/api/v1/session"
-    url = "https://gargantuan-unwritten-carp.gigalixirapp.com/api/v1/session"
+    url = "http://localhost:4000/api/v1/session"
+    # url = "http://localhost:4000/api/api_devices"
     headers = {"Content-Type": "application/json"}
     data = {
         "user": {
@@ -19,10 +19,10 @@ def authenticate_user(email, password):
 
 
 def show_device(deviceId, token):
-    headers = {'Authorization': f'{token}', 'Content-Type': 'application/json'}
+    headers = {'Authorization': f'{token}'}
 
-    api_url = f'https://gargantuan-unwritten-carp.gigalixirapp.com/api/v1/getContentFilters'
-    print(api_url)    
+    api_url = f'http://localhost:4000/api/v1/devices'  # Replace with your actual API endpoint
+    print(api_url, " receiving response next")    
 
     response = requests.get(api_url, headers=headers)
 
@@ -56,7 +56,7 @@ if device_data:
     #print("data: ", res['content_filters'])
     print("\n")
     #print("data: ", device_data.json()['content_filters'])
-    print("headers: ",device_data.headers)
-#    print("content: ",device_data.content) # just json in bytes
-    print("data: ", device_data.json())
+    print("headers: ",device_data.headers, "\n\n")
+    print("content: ",device_data.content) # just json in bytes
+#    print("data: ", device_data.json())
 

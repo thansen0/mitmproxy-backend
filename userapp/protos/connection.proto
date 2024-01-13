@@ -9,7 +9,7 @@ message ConnectionInit {
     string email = 1;
     string clientPubKey = 2;
     string accessToken = 3;
-    int32 deviceId = 4;
+    string deviceId = 4;
 }
 
 

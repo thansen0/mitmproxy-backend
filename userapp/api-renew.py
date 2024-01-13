@@ -17,14 +17,18 @@ def authenticate_user(email, password):
     response = requests.post(url, json=data, headers=headers)
     return response #response.json()
 
-
-def show_device(deviceId, token):
+# CREATE
+def show_device(token):
     headers = {'Authorization': f'{token}', 'Content-Type': 'application/json'}
+    #data = {"device": {"name": "API Device 1"}}
+    data = {}
 
-    api_url = f'https://gargantuan-unwritten-carp.gigalixirapp.com/api/v1/getContentFilters'
-    print(api_url)    
+    #api_url = f'http://localhost:4000/api/v1/session/renew'  # Replace with your actual API endpoint
+    api_url = f'https://gargantuan-unwritten-carp.gigalixirapp.com/api/v1/session/renew'
+    print(api_url)
 
-    response = requests.get(api_url, headers=headers)
+    print("\nheaders:", headers, "\ndata:", data)
+    response = requests.post(api_url, headers=headers )
 
     if response.status_code >= 200 and response.status_code < 300:
         return response
@@ -46,17 +50,12 @@ token = result.json().get('data').get('access_token')
 renewal_token = result.json().get('data').get('renewal_token')
 
 # Example usage
-deviceId = 2
-
-device_data = show_device(deviceId, token)
+device_data = show_device(renewal_token)
 
 if device_data:
-    #res = json.loads( device_data.json())
-    #print("data: ", res)
-    #print("data: ", res['content_filters'])
     print("\n")
-    #print("data: ", device_data.json()['content_filters'])
-    print("headers: ",device_data.headers)
+    print(device_data)
+    print("headers: ",device_data.headers, "\n")
 #    print("content: ",device_data.content) # just json in bytes
     print("data: ", device_data.json())
 
