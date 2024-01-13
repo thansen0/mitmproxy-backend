@@ -1,7 +1,10 @@
+import os
 import grpc
-from concurrent import futures
 import sys
 from PIL import Image
+from concurrent import futures
+import logging
+from nsfw_detector import predict
 
 sys.path.append("/protos")
 import protos.image_classification_pb2 as ic_pb2
@@ -10,6 +13,9 @@ import protos.image_classification_pb2_grpc as ic_pb2_grpc
 # This serves as a server you can use to test whether the client is
 # operational and sending the data as we expect
 class ClassifyImageServicer(ic_pb2_grpc.ClassifyImageServicer):
+    def __init__(self):
+        self.nsfw_model = predict.load_model("./mobilenet_v2_140_224/saved_model.h5")
+
     def StartClassification(self, request, context):
         # create file name
         try:
@@ -27,7 +33,7 @@ class ClassifyImageServicer(ic_pb2_grpc.ClassifyImageServicer):
             classification = predict.classify(self.nsfw_model, filename)
 
         # Your server logic here
-            response = ic_pb2.ConnectionResp(
+            response = ic_pb2.ImageResponse(
                 drawings = classification[filename]['neutral'],
                 neutral = classification[filename]['neutral'],
                 porn = classification[filename]['porn'],
