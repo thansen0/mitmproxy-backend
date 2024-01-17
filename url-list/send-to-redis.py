@@ -12,7 +12,7 @@ def store_lines_in_redis(input_file_path, redis_host='localhost', redis_port=637
                 line = line.strip().lower()
                 
                 # Use the line as the key, and set a dummy value (e.g., "1") in Redis
-                r.set(line, "1")
+                r.set("nsfw:subreddit:"+line, "1")
 
         print("Lines stored in Redis successfully.")
     except FileNotFoundError:
@@ -20,9 +20,11 @@ def store_lines_in_redis(input_file_path, redis_host='localhost', redis_port=637
     except Exception as e:
         print(f"An error occurred: {str(e)}")
 
+    r.connection_pool.disconnect()
+
 if __name__ == "__main__":
     config = configparser.ConfigParser()
-    config.read('../redis-config.ini')
+    config.read('../server-code/redis-config.ini')
 
     #redis_host = 'localhost'  # Replace with your Redis server's host
     #redis_port = 6379  # Replace with your Redis server's port

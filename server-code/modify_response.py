@@ -148,6 +148,10 @@ class ModifyResponse:
                 # delete image
                 os.remove(filename)
 
+    def __del__(self):
+        if self.ri:
+            self.ri.connection_pool.disconnect()
+
 
 addons = [ModifyResponse()]
 
