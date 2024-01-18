@@ -10,6 +10,7 @@ import json
 import pdb
 import re
 import os
+import signal
 
 class ModifyResponse:
     def __init__(self):
@@ -33,6 +34,7 @@ class ModifyResponse:
         if self.content_filters.__eq__("NaN"):
             # if NaN, default to filter everything
             self.content_filters = "trans,lgbt,nsfw"
+        print("Content Filters:", self.content_filters)
 
         # Connect to Redis
         try:
@@ -49,7 +51,7 @@ class ModifyResponse:
             print("Issue with flow request url", flow)
             return False
         parsed_url = urlparse(pretty_url)
-        #print("pretty_url: ",pretty_url)
+        print("pretty_url: ",pretty_url)
         #print("parsed_url:", parsed_url)
 
         # checks if it's a porn link, always blocked
@@ -60,18 +62,22 @@ class ModifyResponse:
                 return True
 
         # Define a regex pattern to extract the domain and subreddit
-        elif "reddit.com/r/" in pretty_url:
-            pattern = r"/r/([^/]+)/"
-    
+        if "reddit.com/r/" in pretty_url:
+            print("ABOUT TO Start regex matching")
+            #pattern = r"/r/([^/]+)/"
+            pattern = r"https?://(?:[\w\-]+\.)?reddit\.com/r/(\w+)/?"    
+
             match = re.search(pattern, pretty_url)            
             if match:
                 # Extract the domain and subreddit from the match object
                 # domain = match.group(0)  # /r/subreddit/
                 subreddit = match.group(1)  # just "subreddit" part
+                logging.info("REDDIT subreddit: %s", subreddit)
 
                 # checks if this is nsfw sub
                 if "nsfw" in self.content_filters:
                     url_key = f'nsfw:subreddit:{subreddit}'.lower()
+                    logging.info("SUBREDDIT url_key: %s", url_key)
                     if self.ri.exists(url_key):
                         return True
 
@@ -148,10 +154,23 @@ class ModifyResponse:
                 # delete image
                 os.remove(filename)
 
-    def __del__(self):
+    def close(self):
         if self.ri:
             self.ri.connection_pool.disconnect()
+        print("redis is closed")
 
+    def __del__(self):
+        self.close()
+
+# make sure to close redis connection
+def signal_handler(sig, frame):
+    try:
+        addons[0].close()
+    except:
+        addons.close()
+    exit(0)
 
 addons = [ModifyResponse()]
 
+# Register signal handler for SIGINT (Ctrl-C)
+signal.signal(signal.SIGINT, signal_handler)
