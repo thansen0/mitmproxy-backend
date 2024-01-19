@@ -1,21 +1,30 @@
 from mitmproxy import http
 import numpy as np
-from nsfw_detector import predict
 from urllib.parse import urlparse
 import redis
 import logging
 import configparser
-import time
 import json
+import grpc
 import pdb
 import re
 import os
+import sys
 import signal
+
+sys.path.append("/protos")
+import protos.image_classification_pb2 as ic_pb2
+import protos.image_classification_pb2_grpc as ic_pb2_grpc
 
 class ModifyResponse:
     def __init__(self):
-        # load model
-        self.nsfw_model = predict.load_model("./mobilenet_v2_140_224/saved_model.h5")
+        # define location of gRPC server
+        self.server_ip_addr = "127.0.0.1"
+        self.server_port_num = 50060
+
+        # create gRPC channel connection
+        self.channel = grpc.insecure_channel( self.server_ip_addr + ':' + str(self.server_port_num) )
+        self.stub = ic_pb2_grpc.ClassifyImageStub(self.channel)
 
         # config file loading
         config = configparser.ConfigParser()
@@ -116,43 +125,41 @@ class ModifyResponse:
 
 
     def response(self, flow: http.HTTPFlow) -> None:
-        cur_time = str(time.time())
-
         if "image/jpeg" in flow.response.headers.get("content-type", "") or "image/png" in flow.response.headers.get("content-type", ""):
         # if "image" in flow.response.headers.get("content-type", ""):
             #logging.info("image/jpeg Response headers: %s" % str(flow.response.headers.get("content-type")))
-            # Save the HTML content to a file with a unique name
-            # filename = f"image_original_{cur_time}_{flow.request.host}_path_{flow.request.path.replace('/', '_')}"
-            try:
-                filename = f"image_original_{cur_time}_{flow.request.host}_path_{flow.request.path.replace('/', '_')}"
-                filename = os.path.join("tmp-image", filename)
-            except:
-                # KeyError(key)
-                logging.info("Couldn't get host from flow.request.host")
-                filename = f"image_original_{cur_time}_path_{flow.request.path.replace('/', '_')}"[:100]
-                filename = os.path.join("tmp-image", filename)
 
-            with open(filename, "wb") as f:
-                f.write(flow.response.content)
-                classification = predict.classify(self.nsfw_model, filename)
+            # There are more formats than this but this is what we're going with
+            img_format = "png"
+            if "image/jpeg" in flow.response.headers.get("content-type", ""):
+                img_format = "jpg"
 
-                # may not be filename, check log
-                neutral_perc = classification[filename]['neutral'] # not porn if near 1
-                porn_perc = classification[filename]['porn'] # porn if near 1
-                sexy_perc = classification[filename]['sexy'] # sexy if near 1
-                hentai_perc = classification[filename]['hentai'] # hentai if near 1
+            self.image = ic_pb2.NLImage(
+                data=flow.response.content,
+                img_format="jpg"
+            )
 
-                if neutral_perc < 0.5 or porn_perc > 0.5 or hentai_perc > 0.5:
-                    logging.info("filling; neutral %d, porn %d, hentai %d", neutral_perc, porn_perc, hentai_perc)
-                    # NSFW image, replace with fill
-                    #fill_image_path = "./fill.svg"
-                    fill_image_path = "./fill.png"
-                    with open(fill_image_path, "rb") as file:
-                        file_bytes = file.read()
-                    flow.response.content = file_bytes
+            request = ic_pb2.ImageMessage(
+                image=self.image
+            )
+            print("request build", request.image.img_format)
+            response = self.stub.StartClassification(request)
 
-                # delete image
-                os.remove(filename)
+            neutral_perc = response.neutral # neutral if near 1
+            drawings_perc = response.drawings # porn if near 1
+            porn_perc = response.porn # porn if near 1
+            sexy_perc = response.sexy # sexy if near 1
+            hentai_perc = response.hentai # hentai if near 1
+
+            if neutral_perc < 0.5 or porn_perc > 0.5 or hentai_perc > 0.5:
+                logging.info("filling; neutral %d, porn %d, hentai %d", neutral_perc, porn_perc, hentai_perc)
+                # NSFW image, replace with fill
+                #fill_image_path = "./fill.svg"
+                fill_image_path = "./fill.png"
+                with open(fill_image_path, "rb") as file:
+                    file_bytes = file.read()
+                flow.response.content = file_bytes
+
 
     def close(self):
         if self.ri:

@@ -17,6 +17,7 @@ import protos.image_classification_pb2_grpc as ic_pb2_grpc
 class ClassifyImageServicer(ic_pb2_grpc.ClassifyImageServicer):
     def __init__(self):
         self.nsfw_model = predict.load_model("./mobilenet_v2_140_224/saved_model.h5")
+        self.debug = True
 
     def StartClassification(self, request, context):
         cur_time = str(time.time())
@@ -33,10 +34,8 @@ class ClassifyImageServicer(ic_pb2_grpc.ClassifyImageServicer):
             filename = os.path.join("tmp-image", filename)
 
         # run image file through classifier
-        print("opening file to write image")
         with open(filename, "wb") as f:
             f.write(request.image.data)
-            print("classifying image")
             classification = predict.classify(self.nsfw_model, filename)
 
             # Your server logic here
@@ -57,7 +56,9 @@ class ClassifyImageServicer(ic_pb2_grpc.ClassifyImageServicer):
         except Exception as e:
             print(f"An error occurred: {e}")
 
-        print("returning response: ", response)
+        if self.debug:
+            print("returning response: ", response)
+
         return response
 
 def signal_handler(sig, frame):

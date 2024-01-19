@@ -11,7 +11,6 @@ class ClassifyImage():
         # self.server_ip_addr = socket.gethostbyname("vpn.parentcontrols.win")
         self.server_ip_addr = "127.0.0.1" # "45.76.232.143"
         self.server_port_num = 50060
-        self.email = email
         self.deviceId = 4 # needs to be set later
 
         # read in image called headshot.jpg
@@ -36,7 +35,6 @@ class ClassifyImage():
         print("request build", request.image.img_format)
         response = stub.StartClassification(request)
     
-        # print("Server Username:", response.email)
         print("porn likelihood: ",response.porn)
 
 
