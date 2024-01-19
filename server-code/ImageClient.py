@@ -7,7 +7,6 @@ import protos.image_classification_pb2 as ic_pb2
 import protos.image_classification_pb2_grpc as ic_pb2_grpc
 
 class ClassifyImage():
-
     def __init__(self, email):
         # self.server_ip_addr = socket.gethostbyname("vpn.parentcontrols.win")
         self.server_ip_addr = "127.0.0.1" # "45.76.232.143"

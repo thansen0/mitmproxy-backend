@@ -1,6 +1,8 @@
 import os
 import grpc
 import sys
+import time
+import signal
 from PIL import Image
 from concurrent import futures
 import logging
@@ -17,37 +19,55 @@ class ClassifyImageServicer(ic_pb2_grpc.ClassifyImageServicer):
         self.nsfw_model = predict.load_model("./mobilenet_v2_140_224/saved_model.h5")
 
     def StartClassification(self, request, context):
+        cur_time = str(time.time())
+        filename = ""
+
         # create file name
         try:
-            filename = f"image_filename"
+            filename = f"image_{cur_time}_path.{request.image.img_format}"
             filename = os.path.join("tmp-image", filename)
         except:
             # KeyError(key)
-            logging.info("error")
-            filename = f"image_original_{cur_time}_path_{flow.request.path.replace('/', '_')}"[:100]
+            logging.info("try block fail as file name is too big?")
+            filename = f"image_{cur_time}_path.{request.image.img_format}"[:100]
             filename = os.path.join("tmp-image", filename)
 
         # run image file through classifier
+        print("opening file to write image")
         with open(filename, "wb") as f:
             f.write(request.image.data)
+            print("classifying image")
             classification = predict.classify(self.nsfw_model, filename)
 
-        # Your server logic here
+            # Your server logic here
             response = ic_pb2.ImageResponse(
-                drawings = classification[filename]['neutral'],
+                drawings = classification[filename]['drawings'],
                 neutral = classification[filename]['neutral'],
                 porn = classification[filename]['porn'],
                 sexy = classification[filename]['sexy'],
                 hentai = classification[filename]['hentai'],
             )
 
-        # delete image 
+        # delete image
+        try:
+            os.remove(filename)
+            print(f"The file {filename} has been deleted successfully.")
+        except FileNotFoundError:
+            print(f"The file {filename} does not exist.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
         print("returning response: ", response)
         return response
 
+def signal_handler(sig, frame):
+    print("Ctrl-C pressed. Cleaning up and exiting.")
+    # Perform any necessary cleanup here
+    sys.exit(0)
+
 def run_server():
     port_num = "50059"
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=16))
     ic_pb2_grpc.add_ClassifyImageServicer_to_server(ClassifyImageServicer(), server)
     server.add_insecure_port("[::]:" + port_num)
     print("starting server on port " + port_num)
@@ -55,4 +75,11 @@ def run_server():
     server.wait_for_termination()
 
 if __name__ == '__main__':
-    run_server()
+    # set up ctrl-c kill 
+    signal.signal(signal.SIGINT, signal_handler)
+
+    while True:
+        try:
+            run_server()
+        except Exception as e:
+            logging.error("Server failed; restarting. Error: "+ str(e))
