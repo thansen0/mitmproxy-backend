@@ -5,13 +5,15 @@ import redis
 import logging
 import configparser
 import json
-import grpc
 import pdb
 import re
 import os
+import io
 import sys
 import signal
+from PIL import Image
 
+import grpc
 sys.path.append("/protos")
 import protos.image_classification_pb2 as ic_pb2
 import protos.image_classification_pb2_grpc as ic_pb2_grpc
@@ -73,7 +75,6 @@ class ModifyResponse:
         # Define a regex pattern to extract the domain and subreddit
         if "reddit.com/r/" in pretty_url:
             print("ABOUT TO Start regex matching")
-            #pattern = r"/r/([^/]+)/"
             pattern = r"https?://(?:[\w\-]+\.)?reddit\.com/r/(\w+)/?"    
 
             match = re.search(pattern, pretty_url)            
@@ -104,8 +105,20 @@ class ModifyResponse:
 
             return False
 
-        #logging.info("Reddit is not in URL")
         return False
+
+    def resize_image_bytes(self, image_bytes, new_size=(140, 224)):
+        # Convert bytes data to a PIL Image object
+        with Image.open(io.BytesIO(image_bytes)) as img:
+            # Resize the image
+            resized_img = img.resize(new_size)
+
+            # Save the resized image to a bytes buffer
+            img_byte_arr = io.BytesIO()
+            resized_img.save(img_byte_arr, format=img.format)
+            resized_img_bytes = img_byte_arr.getvalue()
+
+        return resized_img_bytes
 
     def request(self, flow: http.HTTPFlow) -> None:
         #breakpoint()
@@ -128,6 +141,8 @@ class ModifyResponse:
         if "image/jpeg" in flow.response.headers.get("content-type", "") or "image/png" in flow.response.headers.get("content-type", ""):
         # if "image" in flow.response.headers.get("content-type", ""):
             #logging.info("image/jpeg Response headers: %s" % str(flow.response.headers.get("content-type")))
+            image_bytes = flow.response.content
+            image_bytes = self.resize_image_bytes(image_bytes)
 
             # There are more formats than this but this is what we're going with
             img_format = "png"
@@ -135,7 +150,7 @@ class ModifyResponse:
                 img_format = "jpg"
 
             self.image = ic_pb2.NLImage(
-                data=flow.response.content,
+                data=image_bytes,
                 img_format="jpg"
             )
 

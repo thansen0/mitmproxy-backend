@@ -47,17 +47,17 @@ class ClassifyImageServicer(ic_pb2_grpc.ClassifyImageServicer):
                 hentai = classification[filename]['hentai'],
             )
 
-        # delete image
         try:
             os.remove(filename)
-            print(f"The file {filename} has been deleted successfully.")
+            if self.debug:
+                print(f"The file {filename} has been deleted successfully.")
         except FileNotFoundError:
             print(f"The file {filename} does not exist.")
         except Exception as e:
             print(f"An error occurred: {e}")
 
         if self.debug:
-            print("returning response: ", response)
+            print("returning response: \n", response)
 
         return response
 
