@@ -66,7 +66,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 def run_server():
-    port_num = "50059"
+    port_num = "50060"
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=16))
     ic_pb2_grpc.add_ClassifyImageServicer_to_server(ClassifyImageServicer(), server)
     server.add_insecure_port("[::]:" + port_num)

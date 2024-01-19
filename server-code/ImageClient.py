@@ -10,7 +10,7 @@ class ClassifyImage():
     def __init__(self, email):
         # self.server_ip_addr = socket.gethostbyname("vpn.parentcontrols.win")
         self.server_ip_addr = "127.0.0.1" # "45.76.232.143"
-        self.server_port_num = 50059
+        self.server_port_num = 50060
         self.email = email
         self.deviceId = 4 # needs to be set later
 
