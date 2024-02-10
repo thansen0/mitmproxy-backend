@@ -74,7 +74,7 @@ class ModifyResponse:
 
         # Define a regex pattern to extract the domain and subreddit
         if "reddit.com/r/" in pretty_url:
-            print("ABOUT TO Start regex matching")
+            #print("ABOUT TO Start regex matching")
             pattern = r"https?://(?:[\w\-]+\.)?reddit\.com/r/(\w+)/?"    
 
             match = re.search(pattern, pretty_url)            
@@ -82,12 +82,12 @@ class ModifyResponse:
                 # Extract the domain and subreddit from the match object
                 # domain = match.group(0)  # /r/subreddit/
                 subreddit = match.group(1)  # just "subreddit" part
-                logging.info("REDDIT subreddit: %s", subreddit)
+                #logging.info("REDDIT subreddit: %s", subreddit)
 
                 # checks if this is nsfw sub
                 if "nsfw" in self.content_filters:
                     url_key = f'nsfw:subreddit:{subreddit}'.lower()
-                    logging.info("SUBREDDIT url_key: %s", url_key)
+                    #logging.info("SUBREDDIT url_key: %s", url_key)
                     if self.ri.exists(url_key):
                         return True
 
@@ -129,11 +129,11 @@ class ModifyResponse:
         # print("host: ", host)
 
         request_str = str(flow.request) # i.e. GET reddit.com:80/full/url
-        logging.info(request_str)
+        #logging.info(request_str)
 
         if self._url_exists(request_str, flow):
             flow.kill()
-            logging.info("Killed %s flow" % flow.request)
+            #logging.info("Killed %s flow" % flow.request)
 
 
 
@@ -167,7 +167,7 @@ class ModifyResponse:
             hentai_perc = response.hentai # hentai if near 1
 
             if neutral_perc < 0.5 or porn_perc > 0.5 or hentai_perc > 0.5:
-                logging.info("filling; neutral %d, porn %d, hentai %d", neutral_perc, porn_perc, hentai_perc)
+                #logging.info("filling; neutral %f, porn %f, hentai %f", neutral_perc, porn_perc, hentai_perc)
                 # NSFW image, replace with fill
                 #fill_image_path = "./fill.svg"
                 fill_image_path = "./fill.png"

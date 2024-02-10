@@ -54,6 +54,12 @@ A great line to test if I'm seeing data over a port is
 sudo tcpdump -i any -nn port 51820
 ```
 
+We can output the contents of a docker container with this command as well
+
+```
+docker logs -f container_id
+```
+
 ### mitmproxy wireguard
 
 We can set custom keys and port with the [command line option](https://docs.mitmproxy.org/stable/concepts-modes/#wireguard-transparent-proxy) as well

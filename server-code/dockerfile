@@ -13,6 +13,7 @@ COPY ./keys /etc/keys
 COPY RecieveConnections.py .
 COPY protos/ protos/
 COPY .mitmproxy/ .mitmproxy/
+COPY ./fill.png /fill.png
 
 COPY run_wireguard.py .
 COPY wireguard_server_impl.py .
