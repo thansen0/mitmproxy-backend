@@ -62,8 +62,7 @@ class ModifyResponse:
             print("Issue with flow request url", flow)
             return False
         parsed_url = urlparse(pretty_url)
-        print("pretty_url: ",pretty_url)
-        #print("parsed_url:", parsed_url)
+        #print("pretty_url: ",pretty_url)
 
         # checks if it's a porn link, always blocked
         if "nsfw" in self.content_filters:
@@ -72,9 +71,15 @@ class ModifyResponse:
                 # This should kill the connection
                 return True
 
+        # check for genai link
+        if "genai" in self.content_filters:
+            url_key = "genai:" + parsed_url.netloc
+            if self.ri.exists(url_key):
+                # kill connection
+                return True
+
         # Define a regex pattern to extract the domain and subreddit
         if "reddit.com/r/" in pretty_url:
-            #print("ABOUT TO Start regex matching")
             pattern = r"https?://(?:[\w\-]+\.)?reddit\.com/r/(\w+)/?"    
 
             match = re.search(pattern, pretty_url)            
@@ -157,7 +162,7 @@ class ModifyResponse:
             request = ic_pb2.ImageMessage(
                 image=self.image
             )
-            print("request build", request.image.img_format)
+            #print("request build", request.image.img_format)
             response = self.stub.StartClassification(request)
 
             neutral_perc = response.neutral # neutral if near 1
