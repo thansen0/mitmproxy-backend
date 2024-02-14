@@ -78,6 +78,20 @@ class ModifyResponse:
                 # kill connection
                 return True
 
+        # check for lgbt link
+        if "lgbt" in self.content_filters:
+            url_key = "lgbt:" + parsed_url.netloc
+            if self.ri.exists(url_key):
+                # kill connection
+                return True
+
+        # check for atheism link
+        if "atheism" in self.content_filters:
+            url_key = "atheism:" + parsed_url.netloc
+            if self.ri.exists(url_key):
+                # kill connection
+                return True
+
         # Define a regex pattern to extract the domain and subreddit
         if "reddit.com/r/" in pretty_url:
             pattern = r"https?://(?:[\w\-]+\.)?reddit\.com/r/(\w+)/?"    
@@ -105,6 +119,12 @@ class ModifyResponse:
                 # checks if this is a pro-lgbt sub
                 if "lgbt" in self.content_filters:
                     url_key = f'lgbt:subreddit:{subreddit}'.lower()
+                    if self.ri.exists(url_key):
+                        return True
+
+                # checks if this is a pro-lgbt sub
+                if "atheism" in self.content_filters:
+                    url_key = f'atheism:subreddit:{subreddit}'.lower()
                     if self.ri.exists(url_key):
                         return True
 
