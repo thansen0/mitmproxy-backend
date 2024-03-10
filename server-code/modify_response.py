@@ -41,10 +41,12 @@ class ModifyResponse:
         # config file loading
         dynamic_config = configparser.ConfigParser()
         dynamic_config.read('config.ini')
-        self.content_filters = str(dynamic_config['CLIENT']['content_filters'])
-        if self.content_filters.__eq__("NaN"):
+        content_filters_str = str(dynamic_config['CLIENT']['content_filters'])
+        if content_filters_str.__eq__("NaN"):
             # if NaN, default to filter everything
-            self.content_filters = "trans,lgbt,nsfw"
+            self.content_filters = "trans,lgbt,nsfw,atheism"
+
+        self.content_filters = content_filters_str.split(',')
         print("Content Filters:", self.content_filters)
 
         # Connect to Redis
@@ -56,79 +58,40 @@ class ModifyResponse:
             exit(1)
 
     def _url_exists(self, url, flow):
-
         pretty_url = flow.request.pretty_url
-        if pretty_url == None:
+        if pretty_url is None:
             print("Issue with flow request url", flow)
             return False
         parsed_url = urlparse(pretty_url)
-        #print("pretty_url: ",pretty_url)
 
-        # checks if it's a porn link, always blocked
-        if "nsfw" in self.content_filters:
-            url_key = "nsfw:" + parsed_url.netloc
-            if self.ri.exists(url_key):
-                # This should kill the connection
+        # Collect all keys to check in a list
+        keys_to_check = []
+
+        # add keys to check for in redis, add to keys_to_check
+        for filter_name in self.content_filters:
+            # checks against root urls
+            if filter_name in ['nsfw', 'genai', 'lgbt', 'atheism']:
+                keys_to_check.append(f"{filter_name}:{parsed_url.netloc}".lower())
+    
+            # checks against reddit subs
+            if "reddit.com/r/" in pretty_url:
+                pattern = r"https?://(?:[\w\-]+\.)?reddit\.com/r/(\w+)/?"
+                match = re.search(pattern, pretty_url)
+                if match:
+                    subreddit = match.group(1).lower()
+                    if filter_name in ['nsfw', 'trans', 'lgbt', 'atheism']:
+                        keys_to_check.append(f"{filter_name}:subreddit:{subreddit}".lower())
+
+        #print("NEW FUNC: keys_to_check", keys_to_check)
+        if keys_to_check:
+            # send keys out to redis to check if they exist
+            exists_count = self.ri.exists(*keys_to_check)
+            #print("NEW FUNC: exists_count", exists_count)
+
+            if exists_count > 0:
+                # kill the connection since at least one value existed
+                #print("NEW FUNC: banned site; exiting")
                 return True
-
-        # check for genai link
-        if "genai" in self.content_filters:
-            url_key = "genai:" + parsed_url.netloc
-            if self.ri.exists(url_key):
-                # kill connection
-                return True
-
-        # check for lgbt link
-        if "lgbt" in self.content_filters:
-            url_key = "lgbt:" + parsed_url.netloc
-            if self.ri.exists(url_key):
-                # kill connection
-                return True
-
-        # check for atheism link
-        if "atheism" in self.content_filters:
-            url_key = "atheism:" + parsed_url.netloc
-            if self.ri.exists(url_key):
-                # kill connection
-                return True
-
-        # Define a regex pattern to extract the domain and subreddit
-        if "reddit.com/r/" in pretty_url:
-            pattern = r"https?://(?:[\w\-]+\.)?reddit\.com/r/(\w+)/?"    
-
-            match = re.search(pattern, pretty_url)            
-            if match:
-                # Extract the domain and subreddit from the match object
-                # domain = match.group(0)  # /r/subreddit/
-                subreddit = match.group(1)  # just "subreddit" part
-                #logging.info("REDDIT subreddit: %s", subreddit)
-
-                # checks if this is nsfw sub
-                if "nsfw" in self.content_filters:
-                    url_key = f'nsfw:subreddit:{subreddit}'.lower()
-                    #logging.info("SUBREDDIT url_key: %s", url_key)
-                    if self.ri.exists(url_key):
-                        return True
-
-                # checks if this is a pro-trans sub
-                if "trans" in self.content_filters:
-                    url_key = f'trans:subreddit:{subreddit}'.lower()
-                    if self.ri.exists(url_key):
-                        return True
-
-                # checks if this is a pro-lgbt sub
-                if "lgbt" in self.content_filters:
-                    url_key = f'lgbt:subreddit:{subreddit}'.lower()
-                    if self.ri.exists(url_key):
-                        return True
-
-                # checks if this is a pro-lgbt sub
-                if "atheism" in self.content_filters:
-                    url_key = f'atheism:subreddit:{subreddit}'.lower()
-                    if self.ri.exists(url_key):
-                        return True
-
-            return False
 
         return False
 
