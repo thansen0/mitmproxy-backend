@@ -146,13 +146,6 @@ class ModifyResponse:
         return resized_img_bytes
 
     def request(self, flow: http.HTTPFlow) -> None:
-        #breakpoint()
-        #host = flow.request.headers[b'host'] # i.e. reddit.com
-        #full_url = flow.request.headers[b'Referer']
-        #print("full url: ", full_url)
-        #logging.info(flow.request)
-        # print("host: ", host)
-
         request_str = str(flow.request) # i.e. GET reddit.com:80/full/url
         #logging.info(request_str)
 

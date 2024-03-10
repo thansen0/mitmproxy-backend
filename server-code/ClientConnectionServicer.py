@@ -22,7 +22,6 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
 
 
     def StartConnection(self, request, context):
-        print("request: ", request)
 
         # get data from client and generate server keys
         email = str(request.email)
@@ -30,6 +29,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         client_pubkey = request.clientPubKey
         access_token = request.accessToken
         print("request dev id: ",request.deviceId)
+        print("access_token: ",access_token)
 
 
         # TODO folder name may not be unique anymore, device will
@@ -152,7 +152,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
 
     def getContentFilters(self, access_token):
         #api_url = f'http://localhost:3000/api/v1/devices/{deviceId}'  # Replace with your actual API endpoint
-        api_url = f'https://gargantuan-unwritten-carp.gigalixirapp.com/api/v1/getContentFilters'
+        api_url = f'https://www.parentcontrols.win/api/v1/getContentFilters'
         headers = {'Authorization': f'{access_token}', 'Content-Type': 'application/json'}
 
         try:
