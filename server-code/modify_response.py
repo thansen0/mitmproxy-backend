@@ -12,6 +12,8 @@ import io
 import sys
 import signal
 from PIL import Image
+from bs4 import BeautifulSoup
+import pdb
 
 import grpc
 sys.path.append("/protos")
@@ -57,14 +59,18 @@ class ModifyResponse:
             print(f"Error connecting to Redis: {e}")
             exit(1)
 
-    def _url_exists(self, url, flow):
-        pretty_url = flow.request.pretty_url
-        if pretty_url is None:
-            print("Issue with flow request url", flow)
-            return False
-        parsed_url = urlparse(pretty_url)
+    def _url_exists(self, flow, pretty_url):
+        # recursive calls may already have a parsed url
+        if not pretty_url:
+            pretty_url = flow.request.pretty_url
+            if pretty_url is None:
+                print("Issue with flow request url", flow)
+                return False
+            parsed_url = urlparse(pretty_url)
+        else:
+            parsed_url = urlparse(pretty_url)
 
-        # Collect all keys to check in a list
+        # Collect all redis keys to check
         keys_to_check = []
 
         # add keys to check for in redis, add to keys_to_check
@@ -86,7 +92,6 @@ class ModifyResponse:
         if keys_to_check:
             # send keys out to redis to check if they exist
             exists_count = self.ri.exists(*keys_to_check)
-            #print("NEW FUNC: exists_count", exists_count)
 
             if exists_count > 0:
                 # kill the connection since at least one value existed
@@ -94,6 +99,85 @@ class ModifyResponse:
                 return True
 
         return False
+
+    def _response_url_exists(self, flow, pretty_url):
+        parsed_url = ""
+
+        # recursive calls may already have a parsed url
+        if not pretty_url:
+            pretty_url = flow.request.pretty_url
+            if pretty_url is None:
+                print("Issue with flow request url", flow)
+                return False
+            parsed_url = urlparse(pretty_url)
+        else:
+            parsed_url = urlparse(pretty_url)
+
+        # Collect all redis keys to check
+        keys_to_check = []
+
+        # add keys to check for in redis, add to keys_to_check
+        for filter_name in self.content_filters:
+            # checks against root urls
+            if filter_name in ['nsfw', 'genai', 'lgbt', 'atheism']:
+                keys_to_check.append(f"{filter_name}:{parsed_url.netloc}".lower())
+    
+            # checks against reddit subs
+            if "reddit.com/r/" in pretty_url:
+                pattern = r"https?://(?:[\w\-]+\.)?reddit\.com/r/(\w+)/?"
+                match = re.search(pattern, pretty_url)
+                if match:
+                    subreddit = match.group(1).lower()
+                    if filter_name in ['nsfw', 'trans', 'lgbt', 'atheism']:
+                        keys_to_check.append(f"{filter_name}:subreddit:{subreddit}".lower())
+
+        # make sure flow.response isn't None type
+        if ("yandex.com/search/?text" in pretty_url) and flow.response:
+            #print("YANDEX url", pretty_url)
+            encoding = self.get_encoding(flow)
+            # extract html from flow TODO may not be correct
+            soup = BeautifulSoup(flow.response.content, features="html.parser") # .decode(encoding) converts to string, bad
+            for li in soup.find_all("li", class_="serp-item serp-item_card"):
+                # Find the <a> which contains the outbound link <li>
+                aref = li.find("a", class_="OrganicTitle-Link") # more classes: Path-Item link path__item link organic__greenurl
+                if aref:
+                    print("YANDEX search url: ", aref['href'])
+
+                    # if true, remove
+                    if self._response_url_exists(flow, aref['href']):
+                        li.decompose()
+
+            # add back modified soup content
+            modified_content = str(soup).encode(encoding)
+            flow.response.content = modified_content
+
+        #print("NEW FUNC: keys_to_check", keys_to_check)
+        if keys_to_check:
+            # send keys out to redis to check if they exist
+            print("KEYS to check:", *keys_to_check)
+            exists_count = self.ri.exists(*keys_to_check)
+
+            if exists_count > 0:
+                # kill the connection since at least one value existed
+                #print("NEW FUNC: banned site; exiting")
+                return True
+
+
+
+    def get_encoding(self, flow):
+        default_encoding = 'utf-8'
+        # Extract the Content-Type header
+        content_type = flow.response.headers.get('Content-Type', '')
+    
+        # Attempt to parse the charset (encoding) from the Content-Type header
+        parts = content_type.split(';')
+        encoding = default_encoding
+        for part in parts:
+            if 'charset=' in part:
+                encoding = part.split('=')[1].strip()
+                break
+
+        return encoding
 
     def resize_image_bytes(self, image_bytes, new_size=(140, 224)):
         # Convert bytes data to a PIL Image object
@@ -109,14 +193,9 @@ class ModifyResponse:
         return resized_img_bytes
 
     def request(self, flow: http.HTTPFlow) -> None:
-        request_str = str(flow.request) # i.e. GET reddit.com:80/full/url
-        #logging.info(request_str)
-
-        if self._url_exists(request_str, flow):
+        if self._url_exists(flow, None):
             flow.kill()
             #logging.info("Killed %s flow" % flow.request)
-
-
 
     def response(self, flow: http.HTTPFlow) -> None:
         if "image/jpeg" in flow.response.headers.get("content-type", "") or "image/png" in flow.response.headers.get("content-type", ""):
@@ -156,6 +235,7 @@ class ModifyResponse:
                     file_bytes = file.read()
                 flow.response.content = file_bytes
 
+        self._response_url_exists(flow, None)
 
     def close(self):
         if self.ri:
