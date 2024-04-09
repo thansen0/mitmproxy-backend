@@ -103,6 +103,7 @@ class ModifyResponse:
     def _response_url_exists(self, flow, pretty_url):
         parsed_url = ""
 
+        # TODO not used, can remove
         # recursive calls may already have a parsed url
         if not pretty_url:
             pretty_url = flow.request.pretty_url
@@ -112,24 +113,6 @@ class ModifyResponse:
             parsed_url = urlparse(pretty_url)
         else:
             parsed_url = urlparse(pretty_url)
-
-        # Collect all redis keys to check
-        keys_to_check = []
-
-        # add keys to check for in redis, add to keys_to_check
-        for filter_name in self.content_filters:
-            # checks against root urls
-            if filter_name in ['nsfw', 'genai', 'lgbt', 'atheism']:
-                keys_to_check.append(f"{filter_name}:{parsed_url.netloc}".lower())
-    
-            # checks against reddit subs
-            if "reddit.com/r/" in pretty_url:
-                pattern = r"https?://(?:[\w\-]+\.)?reddit\.com/r/(\w+)/?"
-                match = re.search(pattern, pretty_url)
-                if match:
-                    subreddit = match.group(1).lower()
-                    if filter_name in ['nsfw', 'trans', 'lgbt', 'atheism']:
-                        keys_to_check.append(f"{filter_name}:subreddit:{subreddit}".lower())
 
         # make sure flow.response isn't None type
         if ("yandex.com/search/?text" in pretty_url) and flow.response:
@@ -150,18 +133,6 @@ class ModifyResponse:
             # add back modified soup content
             modified_content = str(soup).encode(encoding)
             flow.response.content = modified_content
-
-        #print("NEW FUNC: keys_to_check", keys_to_check)
-        if keys_to_check:
-            # send keys out to redis to check if they exist
-            print("KEYS to check:", *keys_to_check)
-            exists_count = self.ri.exists(*keys_to_check)
-
-            if exists_count > 0:
-                # kill the connection since at least one value existed
-                #print("NEW FUNC: banned site; exiting")
-                return True
-
 
 
     def get_encoding(self, flow):
