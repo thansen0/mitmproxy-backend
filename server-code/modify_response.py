@@ -114,20 +114,38 @@ class ModifyResponse:
         else:
             parsed_url = urlparse(pretty_url)
 
+        encoding = self.get_encoding(flow)
+
         # make sure flow.response isn't None type
         if ("yandex.com/search/?text" in pretty_url) and flow.response:
             #print("YANDEX url", pretty_url)
-            encoding = self.get_encoding(flow)
-            # extract html from flow TODO may not be correct
             soup = BeautifulSoup(flow.response.content, features="html.parser") # .decode(encoding) converts to string, bad
             for li in soup.find_all("li", class_="serp-item serp-item_card"):
                 # Find the <a> which contains the outbound link <li>
-                aref = li.find("a", class_="OrganicTitle-Link") # more classes: Path-Item link path__item link organic__greenurl
+                aref = li.find("a", class_="OrganicTitle-Link", href=True) # more classes: Path-Item link path__item link organic__greenurl
                 if aref:
                     print("YANDEX search url: ", aref['href'])
 
                     # if true, remove
-                    if self._response_url_exists(flow, aref['href']):
+                    if self._url_exists(flow, aref['href']):
+                        li.decompose()
+
+            # add back modified soup content
+            modified_content = str(soup).encode(encoding)
+            flow.response.content = modified_content
+
+
+        if ("google.com/search" in pretty_url) and flow.response:
+            #print("GOOGLE url", pretty_url)
+            soup = BeautifulSoup(flow.response.content, features="html.parser") # .decode(encoding) converts to string, bad
+            for li in soup.find_all("div", class_="MjjYud"):
+                # Find the <a> which contains the outbound link <li>
+                aref = li.find("a", href=True, attrs={'jsname': 'UWckNb'})
+                if aref:
+                    print("GOOGLE search url: ", aref['href'])
+
+                    # if true, remove
+                    if self._url_exists(flow, aref['href']):
                         li.decompose()
 
             # add back modified soup content
