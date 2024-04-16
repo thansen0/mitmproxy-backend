@@ -117,7 +117,7 @@ class ModifyResponse:
         encoding = self.get_encoding(flow)
 
         # make sure flow.response isn't None type
-        if ("yandex.com/search/?text" in pretty_url) and flow.response:
+        if ("yandex.com/search/?text" in pretty_url) and hasattr(flow, "response"):
             #print("YANDEX url", pretty_url)
             soup = BeautifulSoup(flow.response.content, features="html.parser") # .decode(encoding) converts to string, bad
             for li in soup.find_all("li", class_="serp-item serp-item_card"):
@@ -135,9 +135,10 @@ class ModifyResponse:
             flow.response.content = modified_content
 
 
-        if ("google.com/search" in pretty_url) and flow.response:
+        if ("google.com/search?" in pretty_url) and hasattr(flow, "response") and ("text/html" in flow.response.headers.get("content-type", "")):
             #print("GOOGLE url", pretty_url)
-            soup = BeautifulSoup(flow.response.content, features="html.parser") # .decode(encoding) converts to string, bad
+            soup = BeautifulSoup(flow.response.content, features="html.parser")
+            # parse link search
             for li in soup.find_all("div", class_="MjjYud"):
                 # Find the <a> which contains the outbound link <li>
                 aref = li.find("a", href=True, attrs={'jsname': 'UWckNb'})
@@ -194,13 +195,13 @@ class ModifyResponse:
             image_bytes = self.resize_image_bytes(image_bytes)
 
             # There are more formats than this but this is what we're going with
-            img_format = "png"
+            image_format = "png"
             if "image/jpeg" in flow.response.headers.get("content-type", ""):
-                img_format = "jpg"
+                image_format = "jpg"
 
             self.image = ic_pb2.NLImage(
                 data=image_bytes,
-                img_format="jpg"
+                img_format=image_format
             )
 
             request = ic_pb2.ImageMessage(
