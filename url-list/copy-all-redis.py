@@ -35,19 +35,28 @@ if __name__ == "__main__":
     redis_db = int(config['REDIS']['redis_db'])
 
     store_lines_in_redis("nsfw-sites.txt", "nsfw", redis_host, redis_port)
-
-    store_lines_in_redis("lgbt-sites.txt", "lgbt", redis_host, redis_port)
-
-    store_lines_in_redis("genai-sites.txt", "genai", redis_host, redis_port)
-
-    store_lines_in_redis("atheism-sites.txt", "atheism", redis_host, redis_port)
-
     store_lines_in_redis("nsfw-subs.txt", "nsfw:subreddit", redis_host, redis_port)
 
     store_lines_in_redis("trans-subs.txt", "trans:subreddit", redis_host, redis_port)
 
+    store_lines_in_redis("lgbt-sites.txt", "lgbt", redis_host, redis_port)
     store_lines_in_redis("lgbt-subs.txt", "lgbt:subreddit", redis_host, redis_port)
 
+    store_lines_in_redis("genai-sites.txt", "genai", redis_host, redis_port)
+
+    store_lines_in_redis("atheism-sites.txt", "atheism", redis_host, redis_port)
     store_lines_in_redis("atheism-subs.txt", "atheism:subreddit", redis_host, redis_port)
+
+    store_lines_in_redis("weed-sites.txt", "weed", redis_host, redis_port)
+    store_lines_in_redis("weed-subs.txt", "weed:subreddit", redis_host, redis_port)
+
+    store_lines_in_redis("alcohol-sites.txt", "alcohol", redis_host, redis_port)
+    store_lines_in_redis("alcohol-subs.txt", "alcohol:subreddit", redis_host, redis_port)
+
+    store_lines_in_redis("tobacco-sites.txt", "tobacco", redis_host, redis_port)
+    store_lines_in_redis("tobacco-subs.txt", "tobacco:subreddit", redis_host, redis_port)
+
+    store_lines_in_redis("drug-sites.txt", "drug", redis_host, redis_port)
+    store_lines_in_redis("drug-subs.txt", "drug:subreddit", redis_host, redis_port)
 
 

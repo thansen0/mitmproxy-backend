@@ -3,6 +3,7 @@ AskDrugNerds
 AskDrugs
 bestoferowid
 Borax
+drugs
 currentlytripping
 druganalytics
 druggitors
