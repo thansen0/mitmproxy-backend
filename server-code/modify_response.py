@@ -40,13 +40,16 @@ class ModifyResponse:
         self.redis_auth = config['REDIS']['redis_auth']
         self.redis_db = int(config['REDIS']['redis_db'])
 
+        self.site_filters = ['nsfw', 'genai', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol']
+        self.subreddit_filters = ['nsfw', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol']
+
         # config file loading
         dynamic_config = configparser.ConfigParser()
         dynamic_config.read('config.ini')
         content_filters_str = str(dynamic_config['CLIENT']['content_filters'])
         if content_filters_str.__eq__("NaN"):
             # if NaN, default to filter everything
-            self.content_filters = "trans,lgbt,nsfw,atheism"
+            self.content_filters = "trans,lgbt,nsfw,atheism,drug,weed,alcohol,tobacco"
 
         self.content_filters = content_filters_str.split(',')
         print("Content Filters:", self.content_filters)
@@ -75,8 +78,8 @@ class ModifyResponse:
 
         # add keys to check for in redis, add to keys_to_check
         for filter_name in self.content_filters:
-            # checks against root urls
-            if filter_name in ['nsfw', 'genai', 'lgbt', 'atheism']:
+            # checks against root urls, only check if there is a url filter
+            if filter_name in self.site_filters:
                 keys_to_check.append(f"{filter_name}:{parsed_url.netloc}".lower())
     
             # checks against reddit subs
@@ -85,7 +88,8 @@ class ModifyResponse:
                 match = re.search(pattern, pretty_url)
                 if match:
                     subreddit = match.group(1).lower()
-                    if filter_name in ['nsfw', 'trans', 'lgbt', 'atheism']:
+                    # only check if there is a reddit sub filter
+                    if filter_name in self.subreddit_filters:
                         keys_to_check.append(f"{filter_name}:subreddit:{subreddit}".lower())
 
         #print("NEW FUNC: keys_to_check", keys_to_check)
