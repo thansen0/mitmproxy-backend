@@ -76,6 +76,7 @@ class ModifyResponse:
         # Collect all redis keys to check
         keys_to_check = []
 
+        # TODO move off of O(n) time
         # add keys to check for in redis, add to keys_to_check
         for filter_name in self.content_filters:
             # checks against root urls, only check if there is a url filter
@@ -128,7 +129,7 @@ class ModifyResponse:
                 # Find the <a> which contains the outbound link <li>
                 aref = li.find("a", class_="OrganicTitle-Link", href=True) # more classes: Path-Item link path__item link organic__greenurl
                 if aref:
-                    print("YANDEX search url: ", aref['href'])
+                    #print("YANDEX search url: ", aref['href'])
 
                     # if true, remove
                     if self._url_exists(flow, aref['href']):
@@ -157,6 +158,23 @@ class ModifyResponse:
             modified_content = str(soup).encode(encoding)
             flow.response.content = modified_content
 
+        if ("reddit.com/svc/shreddit/feeds" in pretty_url) and hasattr(flow, "response"):
+            #print("REDDIT url", pretty_url)
+            soup = BeautifulSoup(flow.response.content, features="html.parser")
+            # parse link search
+            for article in soup.find_all("article"):
+                post_menu = article.find("shreddit-post-overflow-menu")
+                if post_menu:
+                    reddit_post_url = "https://www.reddit.com" + post_menu['permalink']
+
+                    # if true, remove
+                    if self._url_exists(flow, reddit_post_url):
+                        print("POST URL being decomposed: ", reddit_post_url)
+                        article.decompose()
+
+            # add back modified soup content
+            modified_content = str(soup).encode(encoding)
+            flow.response.content = modified_content
 
     def get_encoding(self, flow):
         default_encoding = 'utf-8'
