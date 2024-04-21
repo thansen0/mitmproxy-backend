@@ -108,6 +108,10 @@ class ModifyResponse:
     def _response_url_exists(self, flow, pretty_url):
         parsed_url = ""
 
+        if not hasattr(flow, "response"):
+            # no response field, can quit
+            return
+
         # TODO not used, can remove
         # recursive calls may already have a parsed url
         if not pretty_url:
@@ -122,7 +126,7 @@ class ModifyResponse:
         encoding = self.get_encoding(flow)
 
         # make sure flow.response isn't None type
-        if ("yandex.com/search/?text" in pretty_url) and hasattr(flow, "response"):
+        if ("yandex.com/search/?text" in pretty_url):
             #print("YANDEX url", pretty_url)
             soup = BeautifulSoup(flow.response.content, features="html.parser") # .decode(encoding) converts to string, bad
             for li in soup.find_all("li", class_="serp-item serp-item_card"):
@@ -140,7 +144,7 @@ class ModifyResponse:
             flow.response.content = modified_content
 
 
-        if ("google.com/search?" in pretty_url) and hasattr(flow, "response") and ("text/html" in flow.response.headers.get("content-type", "")):
+        if ("google.com/search?" in pretty_url) and ("text/html" in flow.response.headers.get("content-type", "")):
             #print("GOOGLE url", pretty_url)
             soup = BeautifulSoup(flow.response.content, features="html.parser")
             # parse link search
@@ -158,8 +162,8 @@ class ModifyResponse:
             modified_content = str(soup).encode(encoding)
             flow.response.content = modified_content
 
-        if ("reddit.com/svc/shreddit/feeds" in pretty_url) and hasattr(flow, "response"):
-            #print("REDDIT url", pretty_url)
+        if ("reddit.com/svc/shreddit/feeds" in pretty_url) or ("reddit.com/r/all" in pretty_url):
+            # print("REDDIT url", pretty_url)
             soup = BeautifulSoup(flow.response.content, features="html.parser")
             # parse link search
             for article in soup.find_all("article"):
@@ -169,7 +173,7 @@ class ModifyResponse:
 
                     # if true, remove
                     if self._url_exists(flow, reddit_post_url):
-                        print("POST URL being decomposed: ", reddit_post_url)
+                        # print("POST URL being decomposed: ", reddit_post_url)
                         article.decompose()
 
             # add back modified soup content
