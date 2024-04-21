@@ -41,7 +41,7 @@ class ModifyResponse:
         self.redis_db = int(config['REDIS']['redis_db'])
 
         self.site_filters = ['nsfw', 'genai', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol']
-        self.subreddit_filters = ['nsfw', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol']
+        self.subreddit_filters = ['nsfw', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'antiwork', 'antiparent']
 
         # config file loading
         dynamic_config = configparser.ConfigParser()
@@ -127,15 +127,13 @@ class ModifyResponse:
 
         # make sure flow.response isn't None type
         if ("yandex.com/search/?text" in pretty_url):
-            #print("YANDEX url", pretty_url)
             soup = BeautifulSoup(flow.response.content, features="html.parser") # .decode(encoding) converts to string, bad
             for li in soup.find_all("li", class_="serp-item serp-item_card"):
                 # Find the <a> which contains the outbound link <li>
                 aref = li.find("a", class_="OrganicTitle-Link", href=True) # more classes: Path-Item link path__item link organic__greenurl
                 if aref:
                     #print("YANDEX search url: ", aref['href'])
-
-                    # if true, remove
+                    # if the url exists in redis, remove
                     if self._url_exists(flow, aref['href']):
                         li.decompose()
 
@@ -145,15 +143,12 @@ class ModifyResponse:
 
 
         if ("google.com/search?" in pretty_url) and ("text/html" in flow.response.headers.get("content-type", "")):
-            #print("GOOGLE url", pretty_url)
             soup = BeautifulSoup(flow.response.content, features="html.parser")
             # parse link search
             for li in soup.find_all("div", class_="MjjYud"):
                 # Find the <a> which contains the outbound link <li>
                 aref = li.find("a", href=True, attrs={'jsname': 'UWckNb'})
                 if aref:
-                    print("GOOGLE search url: ", aref['href'])
-
                     # if true, remove
                     if self._url_exists(flow, aref['href']):
                         li.decompose()
@@ -162,8 +157,7 @@ class ModifyResponse:
             modified_content = str(soup).encode(encoding)
             flow.response.content = modified_content
 
-        if ("reddit.com/svc/shreddit/feeds" in pretty_url) or ("reddit.com/r/all" in pretty_url):
-            # print("REDDIT url", pretty_url)
+        if ("reddit.com/svc/shreddit/feeds" in pretty_url) or ("reddit.com/r/all" in pretty_url) or ("reddit.com/r/popular" in pretty_url):
             soup = BeautifulSoup(flow.response.content, features="html.parser")
             # parse link search
             for article in soup.find_all("article"):
