@@ -40,8 +40,8 @@ class ModifyResponse:
         self.redis_auth = config['REDIS']['redis_auth']
         self.redis_db = int(config['REDIS']['redis_db'])
 
-        self.site_filters = ['nsfw', 'genai', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol']
-        self.subreddit_filters = ['nsfw', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'antiwork', 'antiparent']
+        self.site_filters = ['nsfw', 'genai', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'shortvideo']
+        self.subreddit_filters = ['nsfw', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'antiwork', 'antiparent', 'shortvideo']
 
         # config file loading
         dynamic_config = configparser.ConfigParser()
@@ -76,7 +76,7 @@ class ModifyResponse:
         # Collect all redis keys to check
         keys_to_check = []
 
-        # TODO move off of O(n) time
+        # TODO move filter for loop off of O(n) time
         # add keys to check for in redis, add to keys_to_check
         for filter_name in self.content_filters:
             # checks against root urls, only check if there is a url filter

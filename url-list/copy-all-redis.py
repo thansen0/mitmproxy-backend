@@ -59,4 +59,10 @@ if __name__ == "__main__":
     store_lines_in_redis("drug-sites.txt", "drug", redis_host, redis_port)
     store_lines_in_redis("drug-subs.txt", "drug:subreddit", redis_host, redis_port)
 
+    store_lines_in_redis("childfree-subs.txt", "childfree:subreddit", redis_host, redis_port)
+
+    store_lines_in_redis("antiwork-subs.txt", "antiwork:subreddit", redis_host, redis_port)
+
+    store_lines_in_redis("shortvideo-sites.txt", "shortvideo", redis_host, redis_port)
+    store_lines_in_redis("shortvideo-subs.txt", "shortvideo:subreddit", redis_host, redis_port)
 

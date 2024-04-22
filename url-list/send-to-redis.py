@@ -1,7 +1,8 @@
 import redis
 import configparser
 
-def store_lines_in_redis(input_file_path, redis_host='localhost', redis_port=6379):
+def store_lines_in_redis(input_file_path, prefix, redis_host='localhost', redis_port=6379):
+    print("Adding " + input_file_path + " with prefix " + prefix)
     try:
         # Connect to the Redis instance
         r = redis.Redis(host=redis_host, port=redis_port, password=redis_auth, db=redis_db)
@@ -12,15 +13,15 @@ def store_lines_in_redis(input_file_path, redis_host='localhost', redis_port=637
                 line = line.strip().lower()
                 
                 # Use the line as the key, and set a dummy value (e.g., "1") in Redis
-                r.set("nsfw:subreddit:"+line, "1")
+                r.set(prefix+":"+line, "1")
 
+        r.connection_pool.disconnect()
         print("Lines stored in Redis successfully.")
     except FileNotFoundError:
         print(f"Input file '{input_file_path}' not found.")
     except Exception as e:
         print(f"An error occurred: {str(e)}")
 
-    r.connection_pool.disconnect()
 
 if __name__ == "__main__":
     config = configparser.ConfigParser()
@@ -33,6 +34,9 @@ if __name__ == "__main__":
     redis_auth = config['REDIS']['redis_auth']
     redis_db = int(config['REDIS']['redis_db'])
 
-    input_file_path = "nsfw-subs.txt"
-    store_lines_in_redis(input_file_path, redis_host, redis_port)
+    store_lines_in_redis("childfree-subs.txt", "childfree:subreddit", redis_host, redis_port)
 
+    store_lines_in_redis("antiwork-subs.txt", "antiwork:subreddit", redis_host, redis_port)
+
+    store_lines_in_redis("shortvideo-sites.txt", "shortvideo", redis_host, redis_port)
+    store_lines_in_redis("shortvideo-subs.txt", "shortvideo:subreddit", redis_host, redis_port)
