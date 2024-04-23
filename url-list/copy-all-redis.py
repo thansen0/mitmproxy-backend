@@ -37,6 +37,7 @@ if __name__ == "__main__":
     store_lines_in_redis("nsfw-sites.txt", "nsfw", redis_host, redis_port)
     store_lines_in_redis("nsfw-subs.txt", "nsfw:subreddit", redis_host, redis_port)
 
+    store_lines_in_redis("trans-sites.txt", "trans", redis_host, redis_port)
     store_lines_in_redis("trans-subs.txt", "trans:subreddit", redis_host, redis_port)
 
     store_lines_in_redis("lgbt-sites.txt", "lgbt", redis_host, redis_port)

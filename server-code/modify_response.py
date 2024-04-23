@@ -40,7 +40,7 @@ class ModifyResponse:
         self.redis_auth = config['REDIS']['redis_auth']
         self.redis_db = int(config['REDIS']['redis_db'])
 
-        self.site_filters = ['nsfw', 'genai', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'shortvideo']
+        self.site_filters = ['nsfw', 'genai', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'shortvideo']
         self.subreddit_filters = ['nsfw', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'antiwork', 'antiparent', 'shortvideo']
 
         # config file loading
@@ -92,6 +92,11 @@ class ModifyResponse:
                     # only check if there is a reddit sub filter
                     if filter_name in self.subreddit_filters:
                         keys_to_check.append(f"{filter_name}:subreddit:{subreddit}".lower())
+
+            if "shortvideo" == filtername:
+                if "youtube.com/shorts" in pretty_url:
+                    # kill shorts
+                    return True
 
         #print("NEW FUNC: keys_to_check", keys_to_check)
         if keys_to_check:
