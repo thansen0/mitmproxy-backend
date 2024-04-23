@@ -93,7 +93,7 @@ class ModifyResponse:
                     if filter_name in self.subreddit_filters:
                         keys_to_check.append(f"{filter_name}:subreddit:{subreddit}".lower())
 
-            if "shortvideo" == filtername:
+            if "shortvideo" == filter_name:
                 if "youtube.com/shorts" in pretty_url:
                     # kill shorts
                     return True
