@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 import redis
 import logging
 import configparser
-import json
+#import demjson3
 import pdb
 import re
 import os
@@ -13,6 +13,7 @@ import sys
 import signal
 from PIL import Image
 from bs4 import BeautifulSoup
+import concurrent.futures
 import pdb
 
 import grpc
@@ -93,10 +94,9 @@ class ModifyResponse:
                     if filter_name in self.subreddit_filters:
                         keys_to_check.append(f"{filter_name}:subreddit:{subreddit}".lower())
 
-            if "shortvideo" == filter_name:
-                if "youtube.com/shorts" in pretty_url:
-                    # kill shorts
-                    return True
+            if "shortvideo" == filter_name and "youtube.com/shorts" in pretty_url:
+                # kill shorts
+                return True
 
         #print("NEW FUNC: keys_to_check", keys_to_check)
         if keys_to_check:
@@ -130,9 +130,19 @@ class ModifyResponse:
 
         encoding = self.get_encoding(flow)
 
-        # make sure flow.response isn't None type
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(self.process_yandex, flow, pretty_url, encoding),
+                executor.submit(self.process_google, flow, pretty_url, encoding),
+                executor.submit(self.process_reddit, flow, pretty_url, encoding)
+            ]
+            # Wait for all threads to complete (optional, depending on your use case)
+            concurrent.futures.wait(futures)
+
+
+    def process_yandex(self, flow, pretty_url, encoding):
         if ("yandex.com/search/?text" in pretty_url):
-            soup = BeautifulSoup(flow.response.content, features="html.parser") # .decode(encoding) converts to string, bad
+            soup = BeautifulSoup(flow.response.content, features="html.parser")
             for li in soup.find_all("li", class_="serp-item serp-item_card"):
                 # Find the <a> which contains the outbound link <li>
                 aref = li.find("a", class_="OrganicTitle-Link", href=True) # more classes: Path-Item link path__item link organic__greenurl
@@ -147,6 +157,7 @@ class ModifyResponse:
             flow.response.content = modified_content
 
 
+    def process_google(self, flow, pretty_url, encoding):
         if ("google.com/search?" in pretty_url) and ("text/html" in flow.response.headers.get("content-type", "")):
             soup = BeautifulSoup(flow.response.content, features="html.parser")
             # parse link search
@@ -162,6 +173,7 @@ class ModifyResponse:
             modified_content = str(soup).encode(encoding)
             flow.response.content = modified_content
 
+    def process_reddit(self, flow, pretty_url, encoding):
         if ("reddit.com/svc/shreddit/feeds" in pretty_url) or ("reddit.com/r/all" in pretty_url) or ("reddit.com/r/popular" in pretty_url):
             soup = BeautifulSoup(flow.response.content, features="html.parser")
             # parse link search
