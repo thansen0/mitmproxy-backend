@@ -23,13 +23,14 @@ COPY cert.pem .
 # Update package lists and install necessary dependencies
 RUN apt update -y && apt upgrade -y && \
     apt install -y python3-pip
-RUN apt install -y apt-utils wget unzip git wireguard python3.10-venv vim netcat
+RUN apt install -y apt-utils wget unzip git wireguard python3.12-venv
 
 RUN mkdir venv && python3 -m venv venv
 ENV PATH="/venv/bin:$PATH"
 # Install TensorFlow using pip
-RUN pip3 install protobuf==3.20.* tensorflow==2.12.1
-RUN pip3 install nsfw-detector redis grpcio # mitmproxy
+RUN pip3 install protobuf==3.20.* tensorflow==2.16.*
+#RUN pip3 install protobuf==3.20.* tensorflow==2.12.1
+RUN pip3 install nsfw-detector redis grpcio beautifulsoup4 # mitmproxy
 
 # build "custom" version of mitmproxy
 RUN git clone https://github.com/thansen0/mitmproxy-pubkey.git
@@ -40,8 +41,8 @@ COPY nsfw_mobilenet_v2_140_224.zip .
 RUN unzip nsfw_mobilenet_v2_140_224.zip
 
 # Clean up the package cache to reduce the image size
-# RUN apt-get clean && \
-#     rm -rf /var/lib/apt/lists/*
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Start a shell when the container runs
 #CMD ["/bin/bash"]
