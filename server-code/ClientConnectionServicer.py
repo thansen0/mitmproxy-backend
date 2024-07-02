@@ -37,7 +37,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         match = re.match(r'^([^@]+)@', email)
         if match:
             email = match.group(1)
-        container_name = email + "_" + deviceId + "_container"
+        container_name = email + deviceId + "_container"
         print(f"Container name: {container_name}")
 
         # start docker instance independent of python
