@@ -12,11 +12,13 @@ COPY terminal_run_wireguard.py .
 COPY ./keys /etc/keys
 COPY RecieveConnections.py .
 COPY protos/ protos/
+# I need .mitmproxy/mitmproxy-ca-cert.cer
+# also added .pem files
 COPY .mitmproxy/ .mitmproxy/
 COPY ./fill.png /fill.png
 
-COPY run_wireguard.py .
-COPY wireguard_server_impl.py .
+# COPY run_wireguard.py .
+# COPY wireguard_server_impl.py .
 COPY wireguard.conf .
 COPY cert.pem .
 
