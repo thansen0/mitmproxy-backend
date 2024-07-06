@@ -50,7 +50,7 @@ This has to be installed in a specific order or else it will have conflicts.
 
 ```
 pip install protobuf==3.20.*
-# pip install tensorflow==2.12.1 # I don't think it's needed
+pip install tensorflow==2.12.1
 pip install nsfw-detector
 
 wget https://github.com/GantMan/nsfw_model/releases/download/1.1.0/nsfw_mobilenet_v2_140_224.zip
