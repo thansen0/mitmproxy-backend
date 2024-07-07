@@ -56,3 +56,4 @@ treedibles
 cannabis
 CannabisExtracts
 vaporents
+Dabs
