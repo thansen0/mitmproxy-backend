@@ -1,10 +1,9 @@
 from mitmproxy import http
 import numpy as np
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 import redis
 import logging
 import configparser
-#import demjson3
 import pdb
 import re
 import os
@@ -50,7 +49,7 @@ class ModifyResponse:
         content_filters_str = str(dynamic_config['CLIENT']['content_filters'])
         if content_filters_str.__eq__("NaN"):
             # if NaN, default to filter everything
-            self.content_filters = "trans,lgbt,nsfw,atheism,drug,weed,alcohol,tobacco"
+            self.content_filters = "trans,lgbt,nsfw,atheism,drug,weed,alcohol,tobacco,safesearch"
 
         self.content_filters = content_filters_str.split(',')
         print("Content Filters:", self.content_filters)
@@ -139,6 +138,43 @@ class ModifyResponse:
             # Wait for all threads to complete (optional, depending on your use case)
             concurrent.futures.wait(futures)
 
+    def _if_safe_search(self, flow):
+        if "safesearch" in self.content_filters:
+            search_engines = {
+                "google.com": {"safe": "active"},
+                "bing.com": {"adlt": "strict"},
+                "yandex.com": {"family": "yes"},
+                "duckduckgo.com": {"kp": "1"},
+                "search.yahoo.com": {"vm": "r"},
+                "ask.com": {"safeSearch": "on"},
+                "search.aol.com": {"safeSearch": "on"},
+                "baidu.com": {"filter": "1"},
+                "youtube.com": {"sp": "EgIQAQ%3D%3D"},
+                "flickr.com": {"safe_search": "1"},
+                "vimeo.com": {"filter": "cc"},
+                "reddit.com": {"include_over_18": "off"},
+                "twitter.com": {"safe": "1"},
+                "x.com": {"safe": "1"},
+#                 "tumblr.com": {"nsfw": "true"},
+                "pinterest.com": {"no_safe_search": "false"}
+            }
+
+            # Parse the URL
+            url = urlparse(flow.request.url)
+            query_params = parse_qs(url.query)
+            new_url = flow.request.url
+
+            # Check if the request URL matches any of the search engines
+            for engine, params in search_engines.items():
+                if engine in url.netloc:
+                    # Update the query parameters with the safe search parameters
+                    query_params.update(params)
+                    # Rebuild the URL with the modified query parameters
+                    new_query = urlencode(query_params, doseq=True)
+                    new_url = urlunparse((url.scheme, url.netloc, url.path, url.params, new_query, url.fragment))
+                    break
+
+            return new_url
 
     def process_yandex(self, flow, pretty_url, encoding):
         if ("yandex.com/search/?text" in pretty_url):
@@ -220,9 +256,19 @@ class ModifyResponse:
         return resized_img_bytes
 
     def request(self, flow: http.HTTPFlow) -> None:
-        if self._url_exists(flow, None):
-            flow.kill()
-            #logging.info("Killed %s flow" % flow.request)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(self._url_exists, flow, None),
+                executor.submit(self._if_safe_search, flow)
+            ]
+
+            if futures[0].result():
+                # logging.info("_url_exists triggered, killing connection")
+                flow.kill()
+
+            flow.request.url = futures[1].result()
+            # logging.info("_url_exists triggered, killing connection {flow.request.url}")
+    
 
     def response(self, flow: http.HTTPFlow) -> None:
         if "image/jpeg" in flow.response.headers.get("content-type", "") or "image/png" in flow.response.headers.get("content-type", ""):
