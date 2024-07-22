@@ -266,9 +266,9 @@ class ModifyResponse:
                 flow.kill()
 
             new_url = futures[1].result()
-            if not new_url:
+            if new_url.strip():
+                # logging.info(f"_url_exists triggered, killing connection {flow.request.url}, new_url: {new_url}")
                 flow.request.url = new_url
-            # logging.info("_url_exists triggered, killing connection {flow.request.url}")
     
 
     def response(self, flow: http.HTTPFlow) -> None:
