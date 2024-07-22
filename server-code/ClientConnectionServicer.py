@@ -18,7 +18,7 @@ import requests
 import re
 
 class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer):
-    ip_addr = "45.76.232.143" # ip addr of server; i.e. computer this is running on
+    ip_addr = "155.138.242.76" # ip addr of server; i.e. computer this is running on
 
 
     def StartConnection(self, request, context):
@@ -46,7 +46,6 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         # start new thread to delete old container
         del_container_thread = threading.Thread(target=self.deleteExistingContainer, args=(container_name,))
         del_container_thread.start()
-
 
         # generate priv key for wireguard server
         server_privkey = mitmproxy_rs.genkey()
@@ -84,7 +83,6 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
             'content_filters': content_filters
         }
         print("email:", email)
-        print("cpk:", client_pubkey)
 
         #with open(email+"-docker.ini") as configfile:
         # TODO a user email will maybe eventually break this

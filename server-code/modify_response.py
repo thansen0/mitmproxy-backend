@@ -40,8 +40,8 @@ class ModifyResponse:
         self.redis_auth = config['REDIS']['redis_auth']
         self.redis_db = int(config['REDIS']['redis_db'])
 
-        self.site_filters = ['nsfw', 'genai', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'shortvideo']
-        self.subreddit_filters = ['nsfw', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'antiwork', 'antiparent', 'shortvideo']
+        self.site_filters = ['nsfw', 'genai', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'shortvideo', 'gambling']
+        self.subreddit_filters = ['nsfw', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'antiwork', 'antiparent', 'shortvideo', 'gambling', 'suicide', 'nonmonogamy']
 
         # config file loading
         dynamic_config = configparser.ConfigParser()
@@ -155,7 +155,6 @@ class ModifyResponse:
                 "reddit.com": {"include_over_18": "off"},
                 "twitter.com": {"safe": "1"},
                 "x.com": {"safe": "1"},
-#                 "tumblr.com": {"nsfw": "true"},
                 "pinterest.com": {"no_safe_search": "false"}
             }
 

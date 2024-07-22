@@ -16,9 +16,6 @@ COPY protos/ protos/
 # also added .pem files
 COPY .mitmproxy/ .mitmproxy/
 COPY ./fill.png /fill.png
-
-# COPY run_wireguard.py .
-# COPY wireguard_server_impl.py .
 COPY wireguard.conf .
 COPY cert.pem .
 
