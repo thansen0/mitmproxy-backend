@@ -11,8 +11,6 @@ import sys # version info
 logging.Formatter.convert = time.gmtime
 logger = logging.getLogger()
 
-public_ip_addr = "45.76.232.143" # ip you would ping to reach host server
-
 async def main():
     # import configuration files information
     config = configparser.ConfigParser()
@@ -50,9 +48,3 @@ async def main():
 if __name__ == '__main__':
     asyncio.run(main())
 
-    # may be untested
-    #if sys.version_info >= (3.7):
-    #    asyncio.run(main())
-    #else:
-    #    loop = asyncio.get_event_loop()
-    #    loop.run_until_complete(main())

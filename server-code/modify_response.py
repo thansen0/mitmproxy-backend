@@ -161,7 +161,7 @@ class ModifyResponse:
             # Parse the URL
             url = urlparse(flow.request.url)
             query_params = parse_qs(url.query)
-            new_url = flow.request.url
+            new_url = ""
 
             # Check if the request URL matches any of the search engines
             for engine, params in search_engines.items():
@@ -265,7 +265,9 @@ class ModifyResponse:
                 # logging.info("_url_exists triggered, killing connection")
                 flow.kill()
 
-            flow.request.url = futures[1].result()
+            new_url = futures[1].result()
+            if not new_url:
+                flow.request.url = new_url
             # logging.info("_url_exists triggered, killing connection {flow.request.url}")
     
 

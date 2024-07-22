@@ -108,7 +108,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
             'network_mode': 'host',
             'name': container_name,  # Assign a name to the container
             'volumes': volume,
-#            'remove': True, # automatically removes container when it stops
+            'remove': True, # automatically removes container when it stops
 #            'ports': {
 #                str(wireguard_port): 51820
 #            }
