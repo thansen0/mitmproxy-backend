@@ -109,9 +109,6 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
             'name': container_name,  # Assign a name to the container
             'volumes': volume,
             'remove': True, # automatically removes container when it stops
-#            'ports': {
-#                str(wireguard_port): 51820
-#            }
         }
 
 
@@ -149,7 +146,6 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
 
 
     def getContentFilters(self, access_token):
-        #api_url = f'http://localhost:3000/api/v1/devices/{deviceId}'  # Replace with your actual API endpoint
         api_url = f'https://www.parentcontrols.win/api/v1/getContentFilters'
         headers = {'Authorization': f'{access_token}', 'Content-Type': 'application/json'}
 
