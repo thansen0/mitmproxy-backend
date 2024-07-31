@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+// Allows a user to send a yes or no question to an LLM and 
+// recieve a response back
+service ClassifyText {
+    // creates the initial connection
+    rpc StartTextClassification (PromptMessage) returns (PromptResponse) {}
+}
+
+message PromptMessage {
+    // message prompt, must be a yes or no question
+    string prompt = 1;
+}
+
+// returns a True or False value only
+message PromptResponse {
+    // True if yes, False if no
+    bool doesViolate = 1;
+}

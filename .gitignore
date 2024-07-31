@@ -3,8 +3,8 @@ __pycache__
 venv
 image_*
 tmp-image/image_*
-json_*
-text_*
+./json_*
+./text_*
 mobilenet_v2_140_224.1.zip
 mobilenet_v2_140_224
 redis-config.ini

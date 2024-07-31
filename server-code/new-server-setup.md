@@ -44,6 +44,13 @@ wget https://github.com/GantMan/nsfw_model/releases/download/1.1.0/nsfw_mobilene
 unzip nsfw_mobilenet_v2_140_224.zip
 ```
 
+Also need to set up environment for TextClassifier
+
+# NOTE untested
+```
+pip install torch einops torchvision transformers
+``
+
 Also need to build protos for gRPC
 
 ```
