@@ -40,8 +40,8 @@ class ModifyResponse:
         self.redis_auth = config['REDIS']['redis_auth']
         self.redis_db = int(config['REDIS']['redis_db'])
 
-        self.site_filters = ['nsfw', 'genai', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'shortvideo', 'gambling']
-        self.subreddit_filters = ['nsfw', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'antiwork', 'antiparent', 'shortvideo', 'gambling', 'suicide', 'nonmonogamy']
+        self.site_filters = ['nsfw', 'genai', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'shortvideo', 'gambling', 'communism', 'socialism']
+        self.subreddit_filters = ['nsfw', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'antiwork', 'antiparent', 'shortvideo', 'gambling', 'suicide', 'nonmonogamy', 'communism', 'socialism']
 
         # config file loading
         dynamic_config = configparser.ConfigParser()
@@ -49,7 +49,7 @@ class ModifyResponse:
         content_filters_str = str(dynamic_config['CLIENT']['content_filters'])
         if content_filters_str.__eq__("NaN"):
             # if NaN, default to filter everything
-            self.content_filters = "trans,lgbt,nsfw,atheism,drug,weed,alcohol,tobacco,safesearch"
+            self.content_filters = "trans,lgbt,nsfw,atheism,drug,weed,alcohol,tobacco,antiparent,safesearch,nonmonogamy,suicide,gambling,communism,socialism"
 
         self.content_filters = content_filters_str.split(',')
         print("Content Filters:", self.content_filters)
