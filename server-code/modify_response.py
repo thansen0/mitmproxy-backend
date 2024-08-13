@@ -262,16 +262,17 @@ class ModifyResponse:
             ]
 
             if futures[0].result():
-                # logging.info("_url_exists triggered, killing connection")
+                logging.info("_url_exists triggered, killing connection")
                 flow.kill()
 
-            new_url = futures[1].result()
-            parsed_url = urlparse(new_url)
-            if all([parsed_url.scheme, parsed_url.netloc]):  # Check if URL is valid
-                flow.request.url = urlunparse(parsed_url)
             else:
-                logging.error(f"Invalid request URL: {new_url}")
-                # url remains unchanged
+                new_url = futures[1].result()
+                parsed_url = urlparse(new_url)
+                if all([parsed_url.scheme, parsed_url.netloc]):  # Check if URL is valid
+                    flow.request.url = urlunparse(parsed_url)
+                else:
+                    logging.error(f"Invalid request URL: {new_url}")
+                    # url remains unchanged
     
 
     def response(self, flow: http.HTTPFlow) -> None:
