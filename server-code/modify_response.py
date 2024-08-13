@@ -52,14 +52,14 @@ class ModifyResponse:
             self.content_filters = "trans,lgbt,nsfw,atheism,drug,weed,alcohol,tobacco,antiparent,safesearch,nonmonogamy,suicide,gambling,communism,socialism"
 
         self.content_filters = content_filters_str.split(',')
-        print("Content Filters:", self.content_filters)
+        logging.info(f"Content Filters: {self.content_filters}")
 
         # Connect to Redis
         try:
             self.ri = redis.StrictRedis(host=self.redis_host, port=self.redis_port, db=self.redis_db, password=self.redis_auth, decode_responses=True)
-            print("Connected to Redis")
+            logging.info("Connected to Redis")
         except Exception as e:
-            print(f"Error connecting to Redis: {e}")
+            logging.error(f"Error connecting to Redis: {e}")
             exit(1)
 
     def _url_exists(self, flow, pretty_url):
@@ -67,7 +67,7 @@ class ModifyResponse:
         if not pretty_url:
             pretty_url = flow.request.pretty_url
             if pretty_url is None:
-                print("Issue with flow request url", flow)
+                logging.error("Issue with flow request url", flow)
                 return False
             parsed_url = urlparse(pretty_url)
         else:
@@ -270,8 +270,8 @@ class ModifyResponse:
                 parsed_url = urlparse(new_url)
                 if all([parsed_url.scheme, parsed_url.netloc]):  # Check if URL is valid
                     flow.request.url = urlunparse(parsed_url)
-                else:
-                    logging.error(f"Invalid request URL: {new_url}")
+                #else:
+                    #logging.error(f"Invalid request URL, remains unchanged: {new_url}")
                     # url remains unchanged
     
 
@@ -299,7 +299,7 @@ class ModifyResponse:
             response = self.stub.StartClassification(request)
 
             neutral_perc = response.neutral # neutral if near 1
-            drawings_perc = response.drawings # porn if near 1
+            # drawings_perc = response.drawings # porn if near 1
             porn_perc = response.porn # porn if near 1
             sexy_perc = response.sexy # sexy if near 1
             hentai_perc = response.hentai # hentai if near 1
@@ -318,7 +318,7 @@ class ModifyResponse:
     def close(self):
         if self.ri:
             self.ri.connection_pool.disconnect()
-        print("redis is closed")
+        logging.info("redis is closed")
 
     def __del__(self):
         self.close()

@@ -24,7 +24,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
     def StartConnection(self, request, context):
 
         # get data from client and generate server keys
-        email = str(request.email)
+        full_email = str(request.email)
         deviceId = str(request.deviceId) # I only use it as a str right now, no sense converting it
         client_pubkey = request.clientPubKey
         access_token = request.accessToken
@@ -34,10 +34,10 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
 
         # TODO folder name may not be unique anymore, device will
         # but should still change
-        match = re.match(r'^([^@]+)@', email)
+        match = re.match(r'^([^@]+)@', full_email)
         if match:
-            email = match.group(1)
-        container_name = email + deviceId + "_container"
+            local_email = match.group(1)
+        container_name = local_email + deviceId + "_container"
         print(f"Container name: {container_name}")
 
         # start docker instance independent of python
@@ -79,14 +79,15 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         }
         docker_config['CLIENT'] = {
             'pub_key': str(client_pubkey),
-            'email': email,
+            'email': local_email,
+            'full_email': full_email,
             'content_filters': content_filters
         }
-        print("email:", email)
+        print("email:", full_email)
 
         #with open(email+"-docker.ini") as configfile:
         # TODO a user email will maybe eventually break this
-        config_path = "user_configs/"+email+"/"+str(deviceId)+"/config.ini"
+        config_path = "user_configs/"+local_email+"/"+str(deviceId)+"/config.ini"
         config_path = os.path.join(os.path.abspath(os.getcwd()), config_path)
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         with open(config_path, "w") as configfile:
@@ -123,7 +124,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
 
         # Your server logic here
         response = connection_pb2.ConnectionResp(
-            email=email,
+            email=full_email,
             serverPubKey=server_pubkey,
             portNumber=wireguard_port,
             serverIPAddr=self.ip_addr,
