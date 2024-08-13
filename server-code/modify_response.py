@@ -54,6 +54,17 @@ class ModifyResponse:
         self.content_filters = content_filters_str.split(',')
         print("Content Filters:", self.content_filters)
 
+
+        # Support:
+        # America/Chicago CT
+        # America/Los_Angeles PT
+        # America/New_York ET
+        # America/Denver MT
+        # America/Anchorage # observes daylight savings
+        # America/Adak # doesn't observe daylight savings
+        # Pacific/Honolulu
+        self.timezone = "America/Chicago"
+
         # Connect to Redis
         try:
             self.ri = redis.StrictRedis(host=self.redis_host, port=self.redis_port, db=self.redis_db, password=self.redis_auth, decode_responses=True)
@@ -137,6 +148,13 @@ class ModifyResponse:
             ]
             # Wait for all threads to complete (optional, depending on your use case)
             concurrent.futures.wait(futures)
+
+    def _in_time_limit(self):
+        current_time = datetime.now(self.timezone)
+        current_hour = current_time.hour
+        current_day = current_time.weekday() # Monday == 0, Sunday == 6
+        
+        return 
 
     def _if_safe_search(self, flow):
         if "safesearch" in self.content_filters:
@@ -259,11 +277,18 @@ class ModifyResponse:
             futures = [
                 executor.submit(self._url_exists, flow, None),
                 executor.submit(self._if_safe_search, flow)
+                executor.submit(self._in_time_limit)
             ]
+
+            if not futures[3].result():
+                # not in time limit, stop 
+                flow.kill()
+                return # don't want to kill twice I'm assuming
 
             if futures[0].result():
                 # logging.info("_url_exists triggered, killing connection")
                 flow.kill()
+                return # I think, hopefully the other threads end on their own
 
             new_url = futures[1].result()
             parsed_url = urlparse(new_url)
