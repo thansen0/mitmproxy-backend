@@ -29,7 +29,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         client_pubkey = request.clientPubKey
         access_token = request.accessToken
         print("request dev id: ",request.deviceId)
-        print("access_token: ",access_token)
+        # print("access_token: ",access_token)
 
 
         # TODO folder name may not be unique anymore, device will
@@ -37,7 +37,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         match = re.match(r'^([^@]+)@', full_email)
         if match:
             local_email = match.group(1)
-        container_name = local_email + deviceId + "_container"
+        container_name = "folder-" + local_email + deviceId + "_container"
         print(f"Container name: {container_name}")
 
         # start docker instance independent of python
@@ -83,8 +83,8 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
             'email': local_email,
             'full_email': full_email,
             'timezone': timezone,
-            'time_schedule': time_schedule
-            'content_filters': content_filters,
+            'time_schedule': time_schedule,
+            'content_filters': content_filters
         }
         print("local_email:", local_email)
 
@@ -150,7 +150,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
 
 
     def getContentFiltersAndSchedule(self, device_id, full_email):
-        api_url = f'http://localhost:4000/api/v1/getURDeviceInfo'
+        api_url = f'https://www.parentcontrols.win/api/v1/getURDeviceInfo'
 
         headers = {'Content-Type': 'application/json'} # no token needed
         dev_params = {'device_id': device_id, 'email': full_email}
@@ -161,11 +161,13 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         content_filter = "NaN"
 
         try:
+            # print("dev_params: ", dev_params)
             response = requests.get(api_url, headers=headers, params=dev_params)
 
-            timezone = response.json().get('timezone'))
-            time_schedule = response.json().get('is_internet_allowed'))
-            content_filter = response.json().get('content_filters'))
+            # print("data: ", response.json())
+            timezone = response.json().get('timezone')
+            time_schedule = response.json().get('is_internet_allowed')
+            content_filter = response.json().get('content_filters')
         except:
             response = None
             print(f"Cannot connect to server, using defualt content filter")
