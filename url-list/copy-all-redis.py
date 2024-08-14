@@ -64,6 +64,20 @@ if __name__ == "__main__":
 
     store_lines_in_redis("antiwork-subs.txt", "antiwork:subreddit", redis_host, redis_port)
 
+    store_lines_in_redis("antiparent-subs.txt", "antiparent:subreddit", redis_host, redis_port)
+
+    store_lines_in_redis("nonmonogomy-subs.txt", "nonmonogomy:subreddit", redis_host, redis_port)
+
     store_lines_in_redis("shortvideo-sites.txt", "shortvideo", redis_host, redis_port)
     store_lines_in_redis("shortvideo-subs.txt", "shortvideo:subreddit", redis_host, redis_port)
 
+    store_lines_in_redis("suicide-subs.txt", "suicide:subreddit", redis_host, redis_port)
+
+    store_lines_in_redis("gambling-sites.txt", "gambling", redis_host, redis_port)
+    store_lines_in_redis("gambling-subs.txt", "gambling:subreddit", redis_host, redis_port)
+
+    store_lines_in_redis("socialism-sites.txt", "socialism", redis_host, redis_port)
+    store_lines_in_redis("socialism-subs.txt", "socialism:subreddit", redis_host, redis_port)
+
+    store_lines_in_redis("communism-sites.txt", "communism", redis_host, redis_port)
+    store_lines_in_redis("communism-subs.txt", "communism:subreddit", redis_host, redis_port)

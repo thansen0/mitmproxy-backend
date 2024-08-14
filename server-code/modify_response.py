@@ -40,8 +40,8 @@ class ModifyResponse:
         self.redis_auth = config['REDIS']['redis_auth']
         self.redis_db = int(config['REDIS']['redis_db'])
 
-        self.site_filters = ['nsfw', 'genai', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'shortvideo', 'gambling']
-        self.subreddit_filters = ['nsfw', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'antiwork', 'antiparent', 'shortvideo', 'gambling', 'suicide', 'nonmonogamy']
+        self.site_filters = ['nsfw', 'genai', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'shortvideo', 'gambling', 'communism', 'socialism']
+        self.subreddit_filters = ['nsfw', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'antiwork', 'antiparent', 'shortvideo', 'gambling', 'suicide', 'nonmonogamy', 'communism', 'socialism']
 
         # config file loading
         dynamic_config = configparser.ConfigParser()
@@ -49,17 +49,17 @@ class ModifyResponse:
         content_filters_str = str(dynamic_config['CLIENT']['content_filters'])
         if content_filters_str.__eq__("NaN"):
             # if NaN, default to filter everything
-            self.content_filters = "trans,lgbt,nsfw,atheism,drug,weed,alcohol,tobacco,safesearch"
+            self.content_filters = "trans,lgbt,nsfw,atheism,drug,weed,alcohol,tobacco,antiparent,safesearch,nonmonogamy,suicide,gambling,communism,socialism"
 
         self.content_filters = content_filters_str.split(',')
-        print("Content Filters:", self.content_filters)
+        logging.info(f"Content Filters: {self.content_filters}")
 
         # Connect to Redis
         try:
             self.ri = redis.StrictRedis(host=self.redis_host, port=self.redis_port, db=self.redis_db, password=self.redis_auth, decode_responses=True)
-            print("Connected to Redis")
+            logging.info("Connected to Redis")
         except Exception as e:
-            print(f"Error connecting to Redis: {e}")
+            logging.error(f"Error connecting to Redis: {e}")
             exit(1)
 
     def _url_exists(self, flow, pretty_url):
@@ -67,7 +67,7 @@ class ModifyResponse:
         if not pretty_url:
             pretty_url = flow.request.pretty_url
             if pretty_url is None:
-                print("Issue with flow request url", flow)
+                logging.error("Issue with flow request url", flow)
                 return False
             parsed_url = urlparse(pretty_url)
         else:
@@ -262,16 +262,17 @@ class ModifyResponse:
             ]
 
             if futures[0].result():
-                # logging.info("_url_exists triggered, killing connection")
+                logging.info("_url_exists triggered, killing connection")
                 flow.kill()
 
-            new_url = futures[1].result()
-            parsed_url = urlparse(new_url)
-            if all([parsed_url.scheme, parsed_url.netloc]):  # Check if URL is valid
-                flow.request.url = urlunparse(parsed_url)
             else:
-                logging.error(f"Invalid request URL: {new_url}")
-                # url remains unchanged
+                new_url = futures[1].result()
+                parsed_url = urlparse(new_url)
+                if all([parsed_url.scheme, parsed_url.netloc]):  # Check if URL is valid
+                    flow.request.url = urlunparse(parsed_url)
+                #else:
+                    #logging.error(f"Invalid request URL, remains unchanged: {new_url}")
+                    # url remains unchanged
     
 
     def response(self, flow: http.HTTPFlow) -> None:
@@ -298,7 +299,7 @@ class ModifyResponse:
             response = self.stub.StartClassification(request)
 
             neutral_perc = response.neutral # neutral if near 1
-            drawings_perc = response.drawings # porn if near 1
+            # drawings_perc = response.drawings # porn if near 1
             porn_perc = response.porn # porn if near 1
             sexy_perc = response.sexy # sexy if near 1
             hentai_perc = response.hentai # hentai if near 1
@@ -317,7 +318,7 @@ class ModifyResponse:
     def close(self):
         if self.ri:
             self.ri.connection_pool.disconnect()
-        print("redis is closed")
+        logging.info("redis is closed")
 
     def __del__(self):
         self.close()
