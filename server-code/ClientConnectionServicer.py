@@ -24,20 +24,20 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
     def StartConnection(self, request, context):
 
         # get data from client and generate server keys
-        email = str(request.email)
+        full_email = str(request.email)
         deviceId = str(request.deviceId) # I only use it as a str right now, no sense converting it
         client_pubkey = request.clientPubKey
         access_token = request.accessToken
         print("request dev id: ",request.deviceId)
-        print("access_token: ",access_token)
+        # print("access_token: ",access_token)
 
 
         # TODO folder name may not be unique anymore, device will
         # but should still change
-        match = re.match(r'^([^@]+)@', email)
+        match = re.match(r'^([^@]+)@', full_email)
         if match:
-            email = match.group(1)
-        container_name = email + deviceId + "_container"
+            local_email = match.group(1)
+        container_name = "folder-" + local_email + deviceId + "_container"
         print(f"Container name: {container_name}")
 
         # start docker instance independent of python
@@ -59,7 +59,8 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         crt_str = cert.public_bytes(encoding=Encoding.PEM) # bytes
 
         # will return filters for user/device or NaN
-        content_filters = self.getContentFilters(access_token);
+        # content_filters = self.getContentFilters(access_token);
+        timezone, time_schedule, content_filters = self.getContentFiltersAndSchedule(deviceId, full_email)
 
         # need to generate port that's not being used
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -79,14 +80,17 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         }
         docker_config['CLIENT'] = {
             'pub_key': str(client_pubkey),
-            'email': email,
+            'email': local_email,
+            'full_email': full_email,
+            'timezone': timezone,
+            'time_schedule': time_schedule,
             'content_filters': content_filters
         }
-        print("email:", email)
+        print("local_email:", local_email)
 
         #with open(email+"-docker.ini") as configfile:
         # TODO a user email will maybe eventually break this
-        config_path = "user_configs/"+email+"/"+str(deviceId)+"/config.ini"
+        config_path = "user_configs/"+local_email+"/"+str(deviceId)+"/config.ini"
         config_path = os.path.join(os.path.abspath(os.getcwd()), config_path)
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         with open(config_path, "w") as configfile:
@@ -123,7 +127,7 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
 
         # Your server logic here
         response = connection_pb2.ConnectionResp(
-            email=email,
+            email=full_email,
             serverPubKey=server_pubkey,
             portNumber=wireguard_port,
             serverIPAddr=self.ip_addr,
@@ -144,6 +148,31 @@ class CreateWGConnectionServicer(connection_pb2_grpc.CreateWGConnectionServicer)
         except:
             print("Container didn't exist")
 
+
+    def getContentFiltersAndSchedule(self, device_id, full_email):
+        api_url = f'https://www.parentcontrols.win/api/v1/getURDeviceInfo'
+
+        headers = {'Content-Type': 'application/json'} # no token needed
+        dev_params = {'device_id': device_id, 'email': full_email}
+
+        # set default values
+        timezone = ""
+        time_schedule = ""
+        content_filter = "NaN"
+
+        try:
+            # print("dev_params: ", dev_params)
+            response = requests.get(api_url, headers=headers, params=dev_params)
+
+            # print("data: ", response.json())
+            timezone = response.json().get('timezone')
+            time_schedule = response.json().get('is_internet_allowed')
+            content_filter = response.json().get('content_filters')
+        except:
+            response = None
+            print(f"Cannot connect to server, using defualt content filter")
+
+        return (timezone, time_schedule, content_filter)
 
     def getContentFilters(self, access_token):
         api_url = f'https://www.parentcontrols.win/api/v1/getContentFilters'
