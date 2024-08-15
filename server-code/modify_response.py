@@ -363,7 +363,7 @@ class ModifyResponse:
                     if None == self.time_schedule[str(d)][str(h)]:
                         logging.error("Found None value in time schedule, which is bad ", d, ":", h)
 
-            logging.info(str(self.time_schedule))
+            logging.info("Timezone and schedule successfully added.")
             return True
 
         except:
