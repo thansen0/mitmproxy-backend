@@ -349,15 +349,12 @@ class ModifyResponse:
         self._response_url_exists(flow, None)
 
     def check_timezone_and_schedule(self, timezone, schedule):
-        #print(timezone)
-        #print(schedule)
         try:
             self.timezone = pytz.timezone(str(timezone))
 
             schedule = schedule.replace("True", "true")
             schedule = schedule.replace("False", "false")
             schedule = schedule.replace("'", '"')
-            print("modified, works in console: ",schedule)
 
             self.time_schedule = json.loads(schedule)
 
