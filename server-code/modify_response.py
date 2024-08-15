@@ -9,10 +9,13 @@ import re
 import os
 import io
 import sys
+import json
 import signal
 from PIL import Image
 from bs4 import BeautifulSoup
 import concurrent.futures
+from datetime import datetime
+import pytz
 import pdb
 
 import grpc
@@ -54,6 +57,13 @@ class ModifyResponse:
         self.content_filters = content_filters_str.split(',')
         logging.info(f"Content Filters: {self.content_filters}")
 
+        # Connect to Redis
+        try:
+            self.ri = redis.StrictRedis(host=self.redis_host, port=self.redis_port, db=self.redis_db, password=self.redis_auth, decode_responses=True)
+            logging.info("Connected to Redis")
+        except Exception as e:
+            logging.error(f"Error connecting to Redis: {e}")
+            exit(1)
 
         # Support:
         # America/Chicago CT
@@ -63,15 +73,11 @@ class ModifyResponse:
         # America/Anchorage # observes daylight savings
         # America/Adak # doesn't observe daylight savings
         # Pacific/Honolulu
-        self.timezone = "America/Chicago"
+        self.timezone = str(dynamic_config['CLIENT']['timezone'])
+        self.time_schedule = str(dynamic_config['CLIENT']['time_schedule'])
+        # this function will change them to empty if they're poorly formated 
+        self.check_timezone_and_schedule(self.timezone, self.time_schedule)
 
-        # Connect to Redis
-        try:
-            self.ri = redis.StrictRedis(host=self.redis_host, port=self.redis_port, db=self.redis_db, password=self.redis_auth, decode_responses=True)
-            logging.info("Connected to Redis")
-        except Exception as e:
-            logging.error(f"Error connecting to Redis: {e}")
-            exit(1)
 
     def _url_exists(self, flow, pretty_url):
         # recursive calls may already have a parsed url
@@ -149,12 +155,17 @@ class ModifyResponse:
             # Wait for all threads to complete (optional, depending on your use case)
             concurrent.futures.wait(futures)
 
+    # returns true if the kid can be on the internet
+    # in limit means within allowed limit
     def _in_time_limit(self):
+        if self.timezone == "" or self.time_schedule == None:
+            return true
+
         current_time = datetime.now(self.timezone)
-        current_hour = current_time.hour
-        current_day = current_time.weekday() # Monday == 0, Sunday == 6
+        current_hour = str(current_time.hour)
+        current_day = str(current_time.weekday()) # Monday == 0, Sunday == 6
         
-        return 
+        return self.time_schedule[current_day][current_hour]
 
     def _if_safe_search(self, flow):
         if "safesearch" in self.content_filters:
@@ -276,20 +287,17 @@ class ModifyResponse:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(self._url_exists, flow, None),
-                executor.submit(self._if_safe_search, flow)
+                executor.submit(self._if_safe_search, flow),
                 executor.submit(self._in_time_limit)
             ]
 
-            if not futures[3].result():
+            if not futures[2].result():
                 # not in time limit, stop 
                 flow.kill()
-                return # don't want to kill twice I'm assuming
 
-            if futures[0].result():
+            elif futures[0].result():
                 logging.info("_url_exists triggered, killing connection")
                 flow.kill()
-                return # I think, hopefully the other threads end on their own
-
             else:
                 new_url = futures[1].result()
                 parsed_url = urlparse(new_url)
@@ -340,6 +348,33 @@ class ModifyResponse:
 
         self._response_url_exists(flow, None)
 
+    def check_timezone_and_schedule(self, timezone, schedule):
+        #print(timezone)
+        #print(schedule)
+        try:
+            self.timezone = pytz.timezone(str(timezone))
+
+            schedule = schedule.replace("True", "true")
+            schedule = schedule.replace("False", "false")
+            schedule = schedule.replace("'", '"')
+            print("modified, works in console: ",schedule)
+
+            self.time_schedule = json.loads(schedule)
+
+            for d in range(0, 6):
+                for h in range(0, 23):
+                    if None == self.time_schedule[str(d)][str(h)]:
+                        logging.error("Found None value in time schedule, which is bad ", d, ":", h)
+
+            logging.info(str(self.time_schedule))
+            return True
+
+        except:
+            logging.error("Time schedule not set up or encountered an  error. " + timezone)
+            self.timezone = ""
+            self.time_schedule = None
+            return False
+
     def close(self):
         if self.ri:
             self.ri.connection_pool.disconnect()
@@ -360,3 +395,4 @@ addons = [ModifyResponse()]
 
 # Register signal handler for SIGINT (Ctrl-C)
 signal.signal(signal.SIGINT, signal_handler)
+
