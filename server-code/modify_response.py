@@ -270,6 +270,30 @@ class ModifyResponse:
 
         return encoding
 
+    def check_timezone_and_schedule(self, timezone, schedule):
+        try:
+            self.timezone = pytz.timezone(str(timezone))
+
+            schedule = schedule.replace("True", "true")
+            schedule = schedule.replace("False", "false")
+            schedule = schedule.replace("'", '"')
+
+            self.time_schedule = json.loads(schedule)
+
+            for d in range(0, 6):
+                for h in range(0, 23):
+                    if None == self.time_schedule[str(d)][str(h)]:
+                        logging.error("Found None value in time schedule, which is bad ", d, ":", h)
+
+            logging.info("Timezone and schedule successfully added.")
+            return True
+
+        except:
+            logging.error("Time schedule not set up or encountered an  error. " + timezone)
+            self.timezone = ""
+            self.time_schedule = None
+            return False
+
     def resize_image_bytes(self, image_bytes, new_size=(140, 224)):
         # Convert bytes data to a PIL Image object
         with Image.open(io.BytesIO(image_bytes)) as img:
@@ -292,13 +316,20 @@ class ModifyResponse:
             ]
 
             if not futures[2].result():
+                futures[0].cancel()
+                futures[1].cancel()
+                logging.info("_url_exists triggered, killing connection")
                 # not in time limit, stop 
                 flow.kill()
 
             elif futures[0].result():
+                futures[1].cancel()
+                futures[2].cancel()
                 logging.info("_url_exists triggered, killing connection")
                 flow.kill()
             else:
+                futures[0].cancel()
+                futures[2].cancel()
                 new_url = futures[1].result()
                 parsed_url = urlparse(new_url)
                 if all([parsed_url.scheme, parsed_url.netloc]):  # Check if URL is valid
@@ -347,30 +378,6 @@ class ModifyResponse:
                 flow.response.content = file_bytes
 
         self._response_url_exists(flow, None)
-
-    def check_timezone_and_schedule(self, timezone, schedule):
-        try:
-            self.timezone = pytz.timezone(str(timezone))
-
-            schedule = schedule.replace("True", "true")
-            schedule = schedule.replace("False", "false")
-            schedule = schedule.replace("'", '"')
-
-            self.time_schedule = json.loads(schedule)
-
-            for d in range(0, 6):
-                for h in range(0, 23):
-                    if None == self.time_schedule[str(d)][str(h)]:
-                        logging.error("Found None value in time schedule, which is bad ", d, ":", h)
-
-            logging.info("Timezone and schedule successfully added.")
-            return True
-
-        except:
-            logging.error("Time schedule not set up or encountered an  error. " + timezone)
-            self.timezone = ""
-            self.time_schedule = None
-            return False
 
     def close(self):
         if self.ri:
