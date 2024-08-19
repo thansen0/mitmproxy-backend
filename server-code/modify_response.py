@@ -121,7 +121,6 @@ class ModifyResponse:
 
             if exists_count > 0:
                 # kill the connection since at least one value existed
-                #print("NEW FUNC: banned site; exiting")
                 return True
 
         return False
@@ -203,6 +202,8 @@ class ModifyResponse:
                     break
 
             return new_url
+
+        return None
 
     def process_yandex(self, flow, pretty_url, encoding):
         if ("yandex.com/search/?text" in pretty_url):
@@ -318,7 +319,7 @@ class ModifyResponse:
             if not futures[2].result():
                 futures[0].cancel()
                 futures[1].cancel()
-                logging.info("_url_exists triggered, killing connection")
+                logging.info("_in_time_limit failed, killing connection")
                 # not in time limit, stop 
                 flow.kill()
 
