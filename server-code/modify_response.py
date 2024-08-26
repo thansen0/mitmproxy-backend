@@ -309,6 +309,8 @@ class ModifyResponse:
         return resized_img_bytes
 
     def request(self, flow: http.HTTPFlow) -> None:
+        # TODO consider creating a whitelist of urls:
+        # update.googleapis.com # used for safe browsing data/etc in chrome
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(self._url_exists, flow, None),
@@ -321,7 +323,11 @@ class ModifyResponse:
                 futures[1].cancel()
                 logging.info("_in_time_limit failed, killing connection")
                 # not in time limit, stop 
-                flow.kill()
+                # flow.kill()
+                end_of_sched = urlparse("https://www.parentcontrols.win/time_limit_reached")
+                # TODO should I just assign the string?
+                if "parentcontrols.win" not in flow.request.url:
+                    flow.request.url = urlunparse(end_of_sched)
 
             elif futures[0].result():
                 futures[1].cancel()
