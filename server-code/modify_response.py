@@ -9,10 +9,13 @@ import re
 import os
 import io
 import sys
+import json
 import signal
 from PIL import Image
 from bs4 import BeautifulSoup
 import concurrent.futures
+from datetime import datetime
+import pytz
 import pdb
 
 import grpc
@@ -40,8 +43,9 @@ class ModifyResponse:
         self.redis_auth = config['REDIS']['redis_auth']
         self.redis_db = int(config['REDIS']['redis_db'])
 
+        # this should all become a bitmask someday
         self.site_filters = ['nsfw', 'genai', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'shortvideo', 'gambling', 'communism', 'socialism']
-        self.subreddit_filters = ['nsfw', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'antiwork', 'antiparent', 'shortvideo', 'gambling', 'suicide', 'nonmonogamy', 'communism', 'socialism']
+        self.subreddit_filters = ['nsfw', 'trans', 'lgbt', 'atheism', 'drug', 'weed', 'tobacco', 'alcohol', 'antiwork', 'antiparent', 'shortvideo', 'gambling', 'suicide', 'nonmonogamy', 'communism', 'socialism', 'misogyny']
 
         # config file loading
         dynamic_config = configparser.ConfigParser()
@@ -61,6 +65,20 @@ class ModifyResponse:
         except Exception as e:
             logging.error(f"Error connecting to Redis: {e}")
             exit(1)
+
+        # Support:
+        # America/Chicago CT
+        # America/Los_Angeles PT
+        # America/New_York ET
+        # America/Denver MT
+        # America/Anchorage # observes daylight savings
+        # America/Adak # doesn't observe daylight savings
+        # Pacific/Honolulu
+        self.timezone = str(dynamic_config['CLIENT']['timezone'])
+        self.time_schedule = str(dynamic_config['CLIENT']['time_schedule'])
+        # this function will change them to empty if they're poorly formated 
+        self.check_timezone_and_schedule(self.timezone, self.time_schedule)
+
 
     def _url_exists(self, flow, pretty_url):
         # recursive calls may already have a parsed url
@@ -104,7 +122,6 @@ class ModifyResponse:
 
             if exists_count > 0:
                 # kill the connection since at least one value existed
-                #print("NEW FUNC: banned site; exiting")
                 return True
 
         return False
@@ -137,6 +154,18 @@ class ModifyResponse:
             ]
             # Wait for all threads to complete (optional, depending on your use case)
             concurrent.futures.wait(futures)
+
+    # returns true if the kid can be on the internet
+    # in limit means within allowed limit
+    def _in_time_limit(self):
+        if self.timezone == "" or self.time_schedule == None:
+            return true
+
+        current_time = datetime.now(self.timezone)
+        current_hour = str(current_time.hour)
+        current_day = str(current_time.weekday()) # Monday == 0, Sunday == 6
+        
+        return self.time_schedule[current_day][current_hour]
 
     def _if_safe_search(self, flow):
         if "safesearch" in self.content_filters:
@@ -174,6 +203,8 @@ class ModifyResponse:
                     break
 
             return new_url
+
+        return None
 
     def process_yandex(self, flow, pretty_url, encoding):
         if ("yandex.com/search/?text" in pretty_url):
@@ -241,6 +272,30 @@ class ModifyResponse:
 
         return encoding
 
+    def check_timezone_and_schedule(self, timezone, schedule):
+        try:
+            self.timezone = pytz.timezone(str(timezone))
+
+            schedule = schedule.replace("True", "true")
+            schedule = schedule.replace("False", "false")
+            schedule = schedule.replace("'", '"')
+
+            self.time_schedule = json.loads(schedule)
+
+            for d in range(0, 6):
+                for h in range(0, 23):
+                    if None == self.time_schedule[str(d)][str(h)]:
+                        logging.error("Found None value in time schedule, which is bad ", d, ":", h)
+
+            logging.info("Timezone and schedule successfully added.")
+            return True
+
+        except:
+            logging.error("Time schedule not set up or encountered an  error. " + timezone)
+            self.timezone = ""
+            self.time_schedule = None
+            return False
+
     def resize_image_bytes(self, image_bytes, new_size=(140, 224)):
         # Convert bytes data to a PIL Image object
         with Image.open(io.BytesIO(image_bytes)) as img:
@@ -255,17 +310,34 @@ class ModifyResponse:
         return resized_img_bytes
 
     def request(self, flow: http.HTTPFlow) -> None:
+        # TODO consider creating a whitelist of urls:
+        # update.googleapis.com # used for safe browsing data/etc in chrome
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(self._url_exists, flow, None),
-                executor.submit(self._if_safe_search, flow)
+                executor.submit(self._if_safe_search, flow),
+                executor.submit(self._in_time_limit)
             ]
 
-            if futures[0].result():
+            if not futures[2].result():
+                futures[0].cancel()
+                futures[1].cancel()
+                logging.info("_in_time_limit failed, killing connection")
+                # not in time limit, stop 
+                # flow.kill()
+                end_of_sched = urlparse("https://www.parentcontrols.win/time_limit_reached")
+                # TODO should I just assign the string?
+                if "parentcontrols.win" not in flow.request.url:
+                    flow.request.url = urlunparse(end_of_sched)
+
+            elif futures[0].result():
+                futures[1].cancel()
+                futures[2].cancel()
                 logging.info("_url_exists triggered, killing connection")
                 flow.kill()
-
             else:
+                futures[0].cancel()
+                futures[2].cancel()
                 new_url = futures[1].result()
                 parsed_url = urlparse(new_url)
                 if all([parsed_url.scheme, parsed_url.netloc]):  # Check if URL is valid
@@ -335,3 +407,4 @@ addons = [ModifyResponse()]
 
 # Register signal handler for SIGINT (Ctrl-C)
 signal.signal(signal.SIGINT, signal_handler)
+

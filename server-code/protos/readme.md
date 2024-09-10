@@ -26,3 +26,18 @@ One great set of commands I found allow you to set up a server and client, and t
 openssl s_server -cert server.crt -key server.key -port [port]
 openssl s_client -connect [hostname]:[port] -showcerts
 ```
+
+# Go Example (DEPRECATED)
+
+To avoid the GIL, I'm going to try writting this in go. To install locally, run
+
+```
+wget https://go.dev/dl/go1.22.5.linux-amd64.tar.gz
+rm -rf /usr/local/go && tar -C /usr/local -xzf go1.22.5.linux-amd64.tar.gz
+# add to .bashrc
+export PATH=$PATH:/usr/local/go/bin
+go mod init mitmproxy/server-code
+go mod tidy
+go get google.golang.org/grpc
+go get google.golang.org/protobuf/cmd/protoc-gen-go
+```

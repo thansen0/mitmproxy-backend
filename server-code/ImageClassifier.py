@@ -28,7 +28,6 @@ class ClassifyImageServicer(ic_pb2_grpc.ClassifyImageServicer):
             filename = f"image_{cur_time}_path.{request.image.img_format}"
             filename = os.path.join("tmp-image", filename)
         except:
-            # KeyError(key)
             logging.info("try block fail as file name is too big?")
             filename = f"image_{cur_time}_path.{request.image.img_format}"[:100]
             filename = os.path.join("tmp-image", filename)
@@ -36,25 +35,45 @@ class ClassifyImageServicer(ic_pb2_grpc.ClassifyImageServicer):
         # run image file through classifier
         with open(filename, "wb") as f:
             f.write(request.image.data)
-            classification = predict.classify(self.nsfw_model, filename)
+            
+            try:
+                classification = predict.classify(self.nsfw_model, filename)
 
-            # Your server logic here
-            response = ic_pb2.ImageResponse(
-                drawings = classification[filename]['drawings'],
-                neutral = classification[filename]['neutral'],
-                porn = classification[filename]['porn'],
-                sexy = classification[filename]['sexy'],
-                hentai = classification[filename]['hentai'],
-            )
+                # classification results
+                response = ic_pb2.ImageResponse(
+                    drawings = classification[filename]['drawings'],
+                    neutral = classification[filename]['neutral'],
+                    porn = classification[filename]['porn'],
+                    sexy = classification[filename]['sexy'],
+                    hentai = classification[filename]['hentai'],
+                )
+
+            except Exception as e:
+                logging.error(f"Can't classify image, exception: {e}")
+                # not classified, allow image
+                response = ic_pb2.ImageResponse(
+                    drawings = 0.0,
+                    neutral = 1.0,
+                    porn = 0.0,
+                    sexy = 0.0,
+                    hentai = 0.0,
+                )
+                # normal safe image as an example
+                # drawings: 0.014500734396278858
+                # hentai: 0.024058302864432335
+                # neutral: 0.9379702210426331
+                # porn: 0.00865322258323431
+                # sexy: 0.014817529357969761
+                
 
         try:
             os.remove(filename)
             if self.debug:
-                print(f"The file {filename} has been deleted successfully.")
+                logging.info(f"The file {filename} has been deleted successfully.")
         except FileNotFoundError:
-            print(f"The file {filename} does not exist.")
+            logging.error(f"The file {filename} does not exist.")
         except Exception as e:
-            print(f"An error occurred: {e}")
+            logging.error(f"An error occurred: {e}")
 
         if self.debug:
             print("returning response: \n", response)
