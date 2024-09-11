@@ -16,8 +16,11 @@ class ClassifyImage():
 
         # read in image called headshot.jpg
         self.tweet_text = "As a veteran of the 2000 Florida recount, I believe strongly in election integrity & the rule of law. Ignore rumors and the media narrative. This election is over when legal proceedings & recounts are completed, every legally cast vote is counted & the results are certified."
+        self.tweet_text = "They think they erased it. People don't seem to understand that a lot of this has been captured by the Good guys. Everything they have done in every state has been recorded and proof obtained. This is a nasty war but it is a war we are going to win. All of this is going to be released to the public.  Watch for it.  We are almost there."
+        self.tweet_text = "What an absolute pussy. If my kids die at the hands of some disgusting mud/cat/human-eating, low-IQ Haitian, I want a pitchfork mob to cut their ancestral tree to a stump. wtf is wrong with people"
+        self.tweet_text = "trans rights are human rights."
 
-        self.prompt_text = "Please answer the following question with either a yes or no. Does the following tweet explicitly talk about US elections? \"" + self.tweet_text + "\" Please consider your answer carefully, and only reply with a yes or a no."
+        self.prompt_text = "You are a fast AI bot tasked with quickly classifying text content on whether it supports a certain ideology. Please answer the following question with either a YES or NO. Does the following tweet explicitly discuss [trans, lgbt, atheism, socialism, communism] favorably? \"" + self.tweet_text + "\" Remember: only reply with a YES or a NO on whether they support a mentioned topic."
 
 
     def attemptConnection(self):
