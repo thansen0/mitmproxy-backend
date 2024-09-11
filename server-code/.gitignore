@@ -1,3 +1,4 @@
 *.zip
 *.mitm
 user_configs/
+.env
