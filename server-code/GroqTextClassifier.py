@@ -28,6 +28,8 @@ class ClassifyTextServicer(tc_pb2_grpc.ClassifyTextServicer):
 
 
     def StartTextClassification(self, request, context):
+        print(f"Input text: {request.prompt}")
+
         start_time = time.time()
         chat_completion = self.client.chat.completions.create(
             messages=[
