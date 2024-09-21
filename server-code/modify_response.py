@@ -23,15 +23,23 @@ sys.path.append("/protos")
 import protos.image_classification_pb2 as ic_pb2
 import protos.image_classification_pb2_grpc as ic_pb2_grpc
 
+import protos.text_binary_classification_pb2 as tc_pb2
+import protos.text_binary_classification_pb2_grpc as tc_pb2_grpc
+
 class ModifyResponse:
     def __init__(self):
         # define location of gRPC server
         self.server_ip_addr = "127.0.0.1"
         self.server_port_num = 50060
+        self.groq_port_num = 50061
 
-        # create gRPC channel connection
-        self.channel = grpc.insecure_channel( self.server_ip_addr + ':' + str(self.server_port_num) )
-        self.stub = ic_pb2_grpc.ClassifyImageStub(self.channel)
+        # create gRPC channel connection for images
+        img_channel = grpc.insecure_channel(f"{self.server_ip_addr}:{str(self.server_port_num)}" )
+        self.stub = ic_pb2_grpc.ClassifyImageStub(img_channel)
+
+        # create gRPC channel connection for Groq
+        groq_channel = grpc.insecure_channel(f"{self.server_ip_addr}:{str(self.groq_port_num)}" )
+        self.groq_stub = tc_pb2_grpc.ClassifyTextStub(groq_channel)
 
         # config file loading
         config = configparser.ConfigParser()
@@ -150,7 +158,8 @@ class ModifyResponse:
             futures = [
                 executor.submit(self.process_yandex, flow, pretty_url, encoding),
                 executor.submit(self.process_google, flow, pretty_url, encoding),
-                executor.submit(self.process_reddit, flow, pretty_url, encoding)
+                executor.submit(self.process_reddit, flow, pretty_url, encoding),
+                executor.submit(self.process_mastodon, flow, pretty_url, encoding)
             ]
             # Wait for all threads to complete (optional, depending on your use case)
             concurrent.futures.wait(futures)
@@ -257,6 +266,58 @@ class ModifyResponse:
             modified_content = str(soup).encode(encoding)
             flow.response.content = modified_content
 
+    # not only untested, but this may not be how it gets data
+    def process_mastodon(self, flow, pretty_url, encoding):
+        #logging.info(f"MASTODON pretty url: {pretty_url}")
+        if "mastodon.social/api/v1/trends/statuses" in pretty_url and ("application/json" in flow.response.headers.get("content-type", "")):
+            logging.info(f"Inside MASTODON if statement")
+
+            #soup = BeautifulSoup(flow.response.content, features="html.parser")
+            # parse link search
+            #for article in soup.find_all("article"):
+            #    status_div = article.find('div', class_='status__wrapper-public')
+            #    post_value = status_div.get('aria-label')
+            data = []
+            filtered_data = []
+            try:
+                data = json.loads(flow.response.content)
+            except Exception as e:
+                logging.error(f"Failed to load json data for MASTODON link, exiting. Exception: str(e)")
+                return # empty retun
+
+            for status in data:
+                if status['content']:
+                    try:
+                        # TODO This is still replying with a long response for too many posts
+                        prompt_text = f"You are a fast AI bot tasked with quickly classifying text content on whether it supports a certain ideology. Please answer the following question with either a YES or NO. Does the following tweet explicitly discuss [{self.content_filters}] favorable? \"{status['content']}\". Remember: only reply with a YES or a NO. Reply YES if the post explicitly discusses any of the mentioned topics."
+
+                        # I could get a significant speed increase by passing in
+                        # multiple prompts at a time, groq can handle it
+                        request = tc_pb2.PromptMessage(
+                            prompt=prompt_text
+                        )
+
+                        response = self.groq_stub.StartTextClassification(request)
+                        if not response.doesViolate:
+                            # only add to filtered_data if we want to keep the post
+                            filtered_data.append(status)
+
+                    except grpc.RpcError as e:
+                        print("gRPC error:", e.details())
+                        status_code = e.code()
+                        print("gRPC status code value:", status_code.value)
+                        # add post if gRPC isn't working
+                        filtered_data.append(status)
+
+                    except Exception as e:
+                        print("An error occurred:", str(e))
+                        # add post if it encounters a generic error
+                        filtered_data.append(status)
+
+            modified_content = str(soup).encode(encoding)
+            modified_content = json.dumps(filtered_data)
+            flow.response.content = modified_content
+
     def get_encoding(self, flow):
         default_encoding = 'utf-8'
         # Extract the Content-Type header
@@ -352,7 +413,13 @@ class ModifyResponse:
         # if "image" in flow.response.headers.get("content-type", ""):
             #logging.info("image/jpeg Response headers: %s" % str(flow.response.headers.get("content-type")))
             image_bytes = flow.response.content
-            image_bytes = self.resize_image_bytes(image_bytes)
+
+            try:
+                image_bytes = self.resize_image_bytes(image_bytes)
+            except Exception as e:
+                logging.error(f"Failure to resize image, {str(e)}. Image path {str(flow.request.url)}")
+                # finish response, don't do anything
+                return
 
             # There are more formats than this but this is what we're going with
             image_format = "png"
@@ -385,7 +452,8 @@ class ModifyResponse:
                     file_bytes = file.read()
                 flow.response.content = file_bytes
 
-        self._response_url_exists(flow, None)
+        else:
+            self._response_url_exists(flow, None)
 
     def close(self):
         if self.ri:
