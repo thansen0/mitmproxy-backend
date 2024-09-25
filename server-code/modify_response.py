@@ -285,6 +285,13 @@ class ModifyResponse:
                 logging.error(f"Failed to load json data for MASTODON link, exiting. Exception: str(e)")
                 return # empty retun
 
+            # Initialize a ThreadPoolExecutor
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                # Map the classify_status function to each item in the data
+                if status['content']:
+                    filtered_data = executor.map(classify_status, data)
+
+            """
             for status in data:
                 if status['content']:
                     try:
@@ -313,10 +320,40 @@ class ModifyResponse:
                         print("An error occurred:", str(e))
                         # add post if it encounters a generic error
                         filtered_data.append(status)
+            """
 
-            modified_content = str(soup).encode(encoding)
+            ## this makes no sense here? modified_content = str(soup).encode(encoding)
             modified_content = json.dumps(filtered_data)
             flow.response.content = modified_content
+
+    def classify_status(status):
+        if status['content']:
+            try:
+                # TODO This is still replying with a long response for too many posts
+                prompt_text = f"You are a fast AI bot tasked with quickly classifying text content on whether it supports a certain ideology. Please answer the following question with either a YES or NO. Does the following tweet explicitly discuss [{self.content_filters}] favorable? \"{status['content']}\". Remember: only reply with a YES or a NO. Reply YES if the post explicitly discusses any of the mentioned topics."
+
+                # I could get a significant speed increase by passing in
+                # multiple prompts at a time, groq can handle it
+                request = tc_pb2.PromptMessage(
+                    prompt=prompt_text
+                )
+
+                response = self.groq_stub.StartTextClassification(request)
+                if not response.doesViolate:
+                    # only add to filtered_data if we want to keep the post
+                    filtered_data.append(status)
+
+            except grpc.RpcError as e:
+                print("gRPC error:", e.details())
+                status_code = e.code()
+                print("gRPC status code value:", status_code.value)
+                # add post if gRPC isn't working
+                filtered_data.append(status)
+
+            except Exception as e:
+                print("An error occurred:", str(e))
+                # add post if it encounters a generic error
+                filtered_data.append(status)
 
     def get_encoding(self, flow):
         default_encoding = 'utf-8'
