@@ -31,10 +31,13 @@ openssl s_client -connect [hostname]:[port] -showcerts
 
 ```
 sudo apt install libgrpc++-dev libgrpc-dev protobuf-compiler-grpc
-# run in protos
-protoc --proto_path=. --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=/usr/bin/grpc_cpp_plugin connection.proto
+# Turn into makefile someday
+# run in protos/ folder
+protoc --proto_path=. --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=/usr/bin/grpc_cpp_plugin image_classification.proto
+protoc --proto_path=. --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=/usr/bin/grpc_cpp_plugin text_binary_classification.proto
+
 # run by FastAllClassifier file
-g++ -std=c++17 FastAllClassifier.cpp protos/connection.pb.cc protos/connection.grpc.pb.cc -o FastAllClassifier -lgrpc++ -lprotobuf -lpthread -ldl
+g++ -std=c++17 FastAllClassifier.cpp protos/image_classification.pb.cc protos/image_classification.grpc.pb.cc protos/text_binary_classification.pb.cc protos/text_binary_classification.grpc.pb.cc -o FastAllClassifier -lgrpc++ -lprotobuf -lpthread
 ```
 
 Incidentally I'm getting an error when I try to run apt install, saying I have the wrong linux headers, although it works anyways.

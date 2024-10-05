@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
-#include "protos/connection.pb.h"
-#include "protos/connection.grpc.pb.h"
+#include "protos/image_classification.pb.h"
+#include "protos/image_classification.grpc.pb.h"
+#include "protos/text_binary_classification.pb.h"
+#include "protos/text_binary_classification.grpc.pb.h"
 
 
 class ClassifyTextServicer {
