@@ -2,3 +2,4 @@
 *.mitm
 user_configs/
 .env
+FastAllClassifier

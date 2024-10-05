@@ -27,6 +27,18 @@ openssl s_server -cert server.crt -key server.key -port [port]
 openssl s_client -connect [hostname]:[port] -showcerts
 ```
 
+# C++ Example
+
+```
+sudo apt install libgrpc++-dev libgrpc-dev protobuf-compiler-grpc
+# run in protos
+protoc --proto_path=. --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=/usr/bin/grpc_cpp_plugin connection.proto
+# run by FastAllClassifier file
+g++ -std=c++17 FastAllClassifier.cpp protos/connection.pb.cc protos/connection.grpc.pb.cc -o FastAllClassifier -lgrpc++ -lprotobuf -lpthread -ldl
+```
+
+Incidentally I'm getting an error when I try to run apt install, saying I have the wrong linux headers, although it works anyways.
+
 # Go Example (DEPRECATED)
 
 To avoid the GIL, I'm going to try writting this in go. To install locally, run
