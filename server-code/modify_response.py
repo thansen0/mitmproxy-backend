@@ -168,7 +168,7 @@ class ModifyResponse:
     # in limit means within allowed limit
     def _in_time_limit(self):
         if self.timezone == "" or self.time_schedule == None:
-            return true
+            return True
 
         current_time = datetime.now(self.timezone)
         current_hour = str(current_time.hour)
@@ -268,7 +268,7 @@ class ModifyResponse:
 
     # not only untested, but this may not be how it gets data
     def process_mastodon(self, flow, pretty_url, encoding):
-        #logging.info(f"MASTODON pretty url: {pretty_url}")
+        # logging.info(f"MASTODON pretty url: {pretty_url}")
         if "mastodon.social/api/v1/trends/statuses" in pretty_url and ("application/json" in flow.response.headers.get("content-type", "")):
             logging.info(f"Inside MASTODON if statement")
 
@@ -276,23 +276,31 @@ class ModifyResponse:
             filtered_data = []
             try:
                 data = json.loads(flow.response.content)
+                logging.info(f"Inside MASTODON if statement, loaded data ")
             except Exception as e:
-                logging.error(f"Failed to load json data for MASTODON link, exiting. Exception: str(e)")
+                logging.error(f"HELP Failed to load json data for MASTODON link, exiting. Exception: str(e)")
                 return # empty retun
 
+            logging.info("About to start threadpool")
             # Initialize a ThreadPoolExecutor
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 # Map the classify_status function to each item in the data
-                if status['content']:
-                    filtered_data = executor.map(classify_status, data)
+                logging.info(f"About to start map {len(data)}")
+                logging.info(f"{data[0]}")
+                filtered_data = executor.map(classify_status, data)
 
-
+            logging.info(f"Size of data: {len(data)}")
+            logging.info(f"Size of filtered data: {len(filtered_data)}")
             ## this makes no sense here? modified_content = str(soup).encode(encoding)
             modified_content = json.dumps(filtered_data)
             flow.response.content = modified_content
 
     def classify_status(status):
-        if status['content']:
+        logging.info("INSIDE classify_status function. ")
+        return status
+
+        #if status['content']:
+        if status.get('content', status.get('note')):
             try:
                 # TODO This is still replying with a long response for too many posts
                 prompt_text = f"You are a fast AI bot tasked with quickly classifying text content on whether it supports a certain ideology. Please answer the following question with either a YES or NO. Does the following tweet explicitly discuss [{self.content_filters}] favorable? \"{status['content']}\". Remember: only reply with a YES or a NO. Reply YES if the post explicitly discusses any of the mentioned topics."
@@ -305,20 +313,31 @@ class ModifyResponse:
 
                 response = self.groq_stub.StartTextClassification(request)
                 if not response.doesViolate:
+                    logging.info("Adding status to mastodon content")
                     # only add to filtered_data if we want to keep the post
-                    filtered_data.append(status)
+                    logging.info(f"status: {status}, status[content]: {status.get('content')}")
+                    #filtered_data.append(status)
+                    return status
+                else:
+                    logging.info(f"{response.doesViolate} doesViolate is TRUE")
 
             except grpc.RpcError as e:
                 print("gRPC error:", e.details())
                 status_code = e.code()
                 print("gRPC status code value:", status_code.value)
                 # add post if gRPC isn't working
-                filtered_data.append(status)
+                # filtered_data.append(status)
+                return statue
 
             except Exception as e:
                 print("An error occurred:", str(e))
                 # add post if it encounters a generic error
-                filtered_data.append(status)
+                # filtered_data.append(status)
+                return status
+        else:
+            logging.error("classify_status: No content on TEXT Classification")
+
+        return None
 
     def get_encoding(self, flow):
         default_encoding = 'utf-8'

@@ -31,7 +31,8 @@ class ClassifyTextServicer(tc_pb2_grpc.ClassifyTextServicer):
 
 
     def StartTextClassification(self, request, context):
-        print(f"Input text: {request.prompt}")
+        if self.debug:
+            print(f"Input text: {request.prompt}")
 
         start_time = time.time()
         chat_completion = self.client.chat.completions.create(
@@ -47,14 +48,16 @@ class ClassifyTextServicer(tc_pb2_grpc.ClassifyTextServicer):
         end_time = time.time()
         output = chat_completion.choices[0].message.content
 
-        print(output)
         if self.debug:
+            print(output)
             logging.info("Prompt output: " + chat_completion.choices[0].message.content)
 
         does_violate = "yes" in output.lower()
         response = tc_pb2.PromptResponse(doesViolate=does_violate)
-        seconds_elapsed = end_time - start_time
-        print("seconds: "+str(seconds_elapsed))
+
+        if self.debug:
+            seconds_elapsed = end_time - start_time
+            print("seconds: "+str(seconds_elapsed))
 
         return response
 
