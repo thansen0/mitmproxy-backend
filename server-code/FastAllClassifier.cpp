@@ -15,6 +15,13 @@ public:
 
 };
 
+class ClassifyImageServicer {
+public
+    ClassifyImageServicer() {
+        printf("obj created\n");
+    }
+}
+
 int run_server() {
 
     ClassifyTextServicer *textServicer = new ClassifyTextServicer();

@@ -22,7 +22,8 @@ import protos.image_classification_pb2_grpc as ic_pb2_grpc
 # operational and sending the data as we expect
 class ClassifyTextServicer(tc_pb2_grpc.ClassifyTextServicer):
     def __init__(self, groq_api_key):
-        self.debug = True
+        self.debug_img = False
+        self.debug_txt = True
 
         print("GROQ api key: "+ str(groq_api_key))
         self.client = Groq(
@@ -31,7 +32,7 @@ class ClassifyTextServicer(tc_pb2_grpc.ClassifyTextServicer):
 
 
     def StartTextClassification(self, request, context):
-        if self.debug:
+        if self.debug_txt:
             print(f"Input text: {request.prompt}")
 
         start_time = time.time()
@@ -48,14 +49,14 @@ class ClassifyTextServicer(tc_pb2_grpc.ClassifyTextServicer):
         end_time = time.time()
         output = chat_completion.choices[0].message.content
 
-        if self.debug:
+        if self.debug_txt:
             print(output)
             logging.info("Prompt output: " + chat_completion.choices[0].message.content)
 
         does_violate = "yes" in output.lower()
         response = tc_pb2.PromptResponse(doesViolate=does_violate)
 
-        if self.debug:
+        if self.debug_txt:
             seconds_elapsed = end_time - start_time
             print("seconds: "+str(seconds_elapsed))
 
@@ -64,7 +65,7 @@ class ClassifyTextServicer(tc_pb2_grpc.ClassifyTextServicer):
 class ClassifyImageServicer(ic_pb2_grpc.ClassifyImageServicer):
     def __init__(self):
         self.nsfw_model = predict.load_model("./mobilenet_v2_140_224/saved_model.h5")
-        self.debug = True
+        self.debug_img = True
 
     def StartClassification(self, request, context):
         cur_time = str(time.time())
@@ -115,15 +116,15 @@ class ClassifyImageServicer(ic_pb2_grpc.ClassifyImageServicer):
 
         try:
             os.remove(filename)
-            if self.debug:
+            if self.debug_img:
                 logging.info(f"The file {filename} has been deleted successfully.")
         except FileNotFoundError:
             logging.error(f"The file {filename} does not exist.")
         except Exception as e:
             logging.error(f"An error occurred: {e}")
 
-        if self.debug:
-            print("returning response: \n", response)
+        if self.debug_img:
+            logging.info("returning response: \n", response)
 
         return response
 

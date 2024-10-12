@@ -85,7 +85,7 @@ class ModifyResponse:
         self.timezone = str(dynamic_config['CLIENT']['timezone'])
         self.time_schedule = str(dynamic_config['CLIENT']['time_schedule'])
         # this function will change them to empty if they're poorly formated 
-        self.check_timezone_and_schedule(self.timezone, self.time_schedule)
+        self.set_timezone_and_schedule(self.timezone, self.time_schedule)
 
 
     def _url_exists(self, flow, pretty_url):
@@ -123,7 +123,6 @@ class ModifyResponse:
                 # kill shorts
                 return True
 
-        #print("NEW FUNC: keys_to_check", keys_to_check)
         if keys_to_check:
             # send keys out to redis to check if they exist
             exists_count = self.ri.exists(*keys_to_check)
@@ -167,14 +166,15 @@ class ModifyResponse:
     # returns true if the kid can be on the internet
     # in limit means within allowed limit
     def _in_time_limit(self):
-        if self.timezone == "" or self.time_schedule == None:
-            return True
+        return True
+#        if self.timezone == "" or self.time_schedule == None:
+#            return True
 
-        current_time = datetime.now(self.timezone)
-        current_hour = str(current_time.hour)
-        current_day = str(current_time.weekday()) # Monday == 0, Sunday == 6
+#        current_time = datetime.now(self.timezone)
+#        current_hour = str(current_time.hour)
+#        current_day = str(current_time.weekday()) # Monday == 0, Sunday == 6
         
-        return self.time_schedule[current_day][current_hour]
+#        return self.time_schedule[current_day][current_hour]
 
     def _if_safe_search(self, flow):
         if "safesearch" in self.content_filters:
@@ -277,33 +277,39 @@ class ModifyResponse:
             try:
                 data = json.loads(flow.response.content)
                 logging.info(f"Inside MASTODON if statement, loaded data ")
+                # print(f"{data}")
             except Exception as e:
                 logging.error(f"HELP Failed to load json data for MASTODON link, exiting. Exception: str(e)")
                 return # empty retun
 
-            logging.info("About to start threadpool")
+            logging.info("About to start threadpool SINGLE FUNC")
             # Initialize a ThreadPoolExecutor
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                # Map the classify_status function to each item in the data
-                logging.info(f"About to start map {len(data)}")
-                logging.info(f"{data[0]}")
-                filtered_data = executor.map(classify_status, data)
+            #classify_status(data)
+            try:
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    # Map the classify_status function to each item in the data
+                    logging.info(f"About to start map {len(data)}")
+                    # logging.info(f"{data[0]}")
+                    filtered_data = list(executor.map(self.classify_status, data))
+            except Exception as e:
+                logging.error(f"Unhandled exception: {e}")
 
             logging.info(f"Size of data: {len(data)}")
             logging.info(f"Size of filtered data: {len(filtered_data)}")
+            filtered_data = [item for item, rr in zip(data, filtered_data) if rr]
+            logging.info(f"Size of data: {len(data)}")
+            logging.info(f"Size of filtered data: {len(filtered_data)}")
             ## this makes no sense here? modified_content = str(soup).encode(encoding)
-            modified_content = json.dumps(filtered_data)
-            flow.response.content = modified_content
+            flow.response.content = json.dumps(filtered_data)
 
-    def classify_status(status):
+    def classify_status(self, status):
         logging.info("INSIDE classify_status function. ")
-        return status
 
         #if status['content']:
         if status.get('content', status.get('note')):
             try:
                 # TODO This is still replying with a long response for too many posts
-                prompt_text = f"You are a fast AI bot tasked with quickly classifying text content on whether it supports a certain ideology. Please answer the following question with either a YES or NO. Does the following tweet explicitly discuss [{self.content_filters}] favorable? \"{status['content']}\". Remember: only reply with a YES or a NO. Reply YES if the post explicitly discusses any of the mentioned topics."
+                prompt_text = f"You are a fast AI bot tasked with quickly classifying text content on whether it supports a certain ideology. Please answer the following question with either a YES or NO. Does the following tweet explicitly discuss [{self.content_filters}] favorable? \"{status.get('content', status.get('note'))}\". Remember: only reply with a YES or a NO. Reply YES if the post explicitly discusses any of the mentioned topics."
 
                 # I could get a significant speed increase by passing in
                 # multiple prompts at a time, groq can handle it
@@ -322,15 +328,15 @@ class ModifyResponse:
                     logging.info(f"{response.doesViolate} doesViolate is TRUE")
 
             except grpc.RpcError as e:
-                print("gRPC error:", e.details())
+                logging.error("gRPC error:", e.details())
                 status_code = e.code()
-                print("gRPC status code value:", status_code.value)
+                logging.error("gRPC status code value:", status_code.value)
                 # add post if gRPC isn't working
                 # filtered_data.append(status)
-                return statue
+                return status
 
             except Exception as e:
-                print("An error occurred:", str(e))
+                logging.error("An error occurred:", str(e))
                 # add post if it encounters a generic error
                 # filtered_data.append(status)
                 return status
@@ -354,7 +360,7 @@ class ModifyResponse:
 
         return encoding
 
-    def check_timezone_and_schedule(self, timezone, schedule):
+    def set_timezone_and_schedule(self, timezone, schedule):
         try:
             self.timezone = pytz.timezone(str(timezone))
 
