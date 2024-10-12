@@ -292,10 +292,10 @@ class ModifyResponse:
                     # logging.info(f"{data[0]}")
                     filtered_data = list(executor.map(self.classify_status, data))
             except Exception as e:
-                logging.error(f"Unhandled exception: {e}")
+                logging.error(f"Unhandled exception in ThreadPoolExecutor: {e}")
 
             logging.info(f"Size of data: {len(data)}")
-            logging.info(f"Size of filtered data: {len(filtered_data)}")
+            logging.info(f"Size of pre-filtered data: {len(filtered_data)}")
             filtered_data = [item for item, rr in zip(data, filtered_data) if rr]
             logging.info(f"Size of data: {len(data)}")
             logging.info(f"Size of filtered data: {len(filtered_data)}")
@@ -318,19 +318,18 @@ class ModifyResponse:
                 )
 
                 response = self.groq_stub.StartTextClassification(request)
-                if not response.doesViolate:
-                    logging.info("Adding status to mastodon content")
-                    # only add to filtered_data if we want to keep the post
-                    logging.info(f"status: {status}, status[content]: {status.get('content')}")
-                    #filtered_data.append(status)
-                    return status
+                if response.doesViolate:
+                    logging.info(f"{response.doesViolate} doesViolate is TRUE, removing from feed.")
                 else:
-                    logging.info(f"{response.doesViolate} doesViolate is TRUE")
+                    # only add to filtered_data if we want to keep the post
+                    #logging.info(f"status: {status}, status[content]: {status.get('content')}")
+                    logging.info(f"{response.doesViolate} doesViolate is FALSE, staying in feed.")
+                    return status
 
             except grpc.RpcError as e:
-                logging.error("gRPC error:", e.details())
+                logging.error(f"gRPC error: {e.details()}")
                 status_code = e.code()
-                logging.error("gRPC status code value:", status_code.value)
+                logging.error(f"gRPC status code value: {status_code.value}")
                 # add post if gRPC isn't working
                 # filtered_data.append(status)
                 return status
@@ -343,7 +342,8 @@ class ModifyResponse:
         else:
             logging.error("classify_status: No content on TEXT Classification")
 
-        return None
+        # removing from feed
+        return ""
 
     def get_encoding(self, flow):
         default_encoding = 'utf-8'
