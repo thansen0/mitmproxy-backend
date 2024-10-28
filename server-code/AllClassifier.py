@@ -3,21 +3,16 @@ import grpc
 import sys
 import time
 import signal
+import logging
 from dotenv import load_dotenv
 from concurrent import futures
-from groq import Groq
-import logging
-from nsfw_detector import predict
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline 
 
+# from Moondream2TextClassifier import ClassifyTextServicer
 from GroqTextClassifier import ClassifyTextServicer
 from ImageNetImageClassifier import ClassifyImageServicer
 
 sys.path.append("/protos")
-#import protos.image_classification_pb2 as ic_pb2
 import protos.image_classification_pb2_grpc as ic_pb2_grpc
-#import protos.text_binary_classification_pb2 as tc_pb2
 import protos.text_binary_classification_pb2_grpc as tc_pb2_grpc
 
 def signal_handler(sig, frame):
@@ -36,14 +31,14 @@ def run_server():
     groq_server = grpc.server(futures.ThreadPoolExecutor(max_workers=16))
     tc_pb2_grpc.add_ClassifyTextServicer_to_server(ClassifyTextServicer(groq_api_key), groq_server)
     groq_server.add_insecure_port("[::]:" + groq_port_num)
-    print("starting server on port " + groq_port_num)
+    logging.info("starting server on port " + groq_port_num)
     groq_server.start()
 
     img_port_num = "50060"
     img_server = grpc.server(futures.ThreadPoolExecutor(max_workers=16))
     ic_pb2_grpc.add_ClassifyImageServicer_to_server(ClassifyImageServicer(), img_server)
     img_server.add_insecure_port("[::]:" + img_port_num)
-    print("starting server on port " + img_port_num)
+    logging.info("starting server on port " + img_port_num)
     img_server.start()
 
     groq_server.wait_for_termination()
